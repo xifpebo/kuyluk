@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="{{v:lang}}" data-page="{{v:page}}">
+<head>
+{{> head}}
+  <script type="module" src="{{asset:/js/site.js}}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">{{t:common.skipToContent}}</a>
+  {{> icons}}
+  {{> header}}
+  <main id="main" class="site-main" tabindex="-1">
+    <noscript><p class="notice notice--warn container">{{t:common.noscript}}</p></noscript>
+{{raw:body}}
+  </main>
+  {{> footer}}
+  <div class="toast-region" aria-live="polite" aria-atomic="false" data-toasts></div>
+</body>
+</html>

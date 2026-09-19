@@ -1,0 +1,51 @@
+<div class="container auth-page">
+  <section class="auth-card auth-card--wide" aria-labelledby="register-title">
+    <p class="eyebrow">{{t:nav.account}}</p>
+    <h1 class="auth-card__title display" id="register-title">{{t:auth.registerTitle}}</h1>
+    <p class="auth-card__lead">{{t:auth.registerLead}}</p>
+    <form class="stack" data-register-form novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="reg-name">{{t:auth.name}}</label>
+          <input class="control" id="reg-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="100">
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-email">{{t:auth.email}}</label>
+          <input class="control" id="reg-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254">
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-phone">{{t:auth.phone}} <span class="field__optional">({{t:common.optional}})</span></label>
+          <input class="control" id="reg-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="25" placeholder="+998 __ ___ __ __">
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-company">{{t:auth.company}} <span class="field__optional">({{t:common.optional}})</span></label>
+          <input class="control" id="reg-company" name="company" type="text" autocomplete="organization" maxlength="120">
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-password">{{t:auth.password}}</label>
+          <div class="password-input">
+            <input class="control" id="reg-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-password-policy aria-describedby="reg-password-meter">
+            <button class="password-input__toggle" type="button" data-password-toggle aria-pressed="false" aria-controls="reg-password" data-label-show="{{t:auth.showPassword}}" data-label-hide="{{t:auth.hidePassword}}">
+              <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg><span class="visually-hidden">{{t:auth.showPassword}}</span>
+            </button>
+          </div>
+          <div id="reg-password-meter">{{> password-rules}}</div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-password2">{{t:auth.passwordConfirm}}</label>
+          <input class="control" id="reg-password2" name="passwordConfirm" type="password" autocomplete="new-password" required maxlength="128" data-match="password">
+        </div>
+      </div>
+      <div class="field">
+        <label class="checkbox">
+          <input type="checkbox" name="terms" value="true" required>
+          <span class="checkbox__box" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+          <span>{{t:auth.terms}}</span>
+        </label>
+      </div>
+      <p class="form-error" role="alert" data-form-error hidden></p>
+      <button class="btn btn-accent btn-lg btn-block" type="submit">{{t:auth.registerButton}}</button>
+    </form>
+    <p class="auth-card__alt">{{t:auth.haveAccount}} <a href="/login">{{t:nav.login}}</a></p>
+  </section>
+</div>

@@ -1,0 +1,22 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li><a href="/suppliers">{{t:nav.suppliers}}</a></li>
+        <li aria-current="page" data-crumb-current></li>
+      </ol>
+    </nav>
+    <div class="supplier-hero" data-supplier-hero aria-busy="true">
+      <div class="skeleton skeleton-line skeleton-line--lg"></div>
+      <div class="skeleton skeleton-line"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container section section--tight">
+  <div class="section-head">
+    <h2 class="section-title display">{{t:suppliers.productsTitle}}</h2>
+  </div>
+  <div class="product-grid" data-supplier-products aria-busy="true"></div>
+</div>

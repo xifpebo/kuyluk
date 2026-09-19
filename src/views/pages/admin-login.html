@@ -1,0 +1,48 @@
+<div class="staff-login">
+  <section class="staff-login__brand blueprint" aria-hidden="true">
+    <div class="staff-login__stripes"></div>
+    <a class="brand brand--large" href="/" tabindex="-1">
+      <svg class="brand__mark"><use href="#i-logo"></use></svg>
+      <span class="brand__text"><span class="brand__top">Big Bazaar</span><span class="brand__bottom">Build</span></span>
+    </a>
+    <p class="staff-login__claim display">{{t:admin.metaTitle}}</p>
+    <ul class="staff-login__features">
+      <li><svg class="icon"><use href="#i-grid"></use></svg>{{t:admin.nav.products}} · {{t:admin.nav.categories}} · {{t:admin.nav.suppliers}}</li>
+      <li><svg class="icon"><use href="#i-clipboard"></use></svg>{{t:admin.nav.quotes}}</li>
+      <li><svg class="icon"><use href="#i-activity"></use></svg>{{t:admin.nav.audit}}</li>
+    </ul>
+  </section>
+
+  <section class="staff-login__form" aria-labelledby="staff-login-title">
+    <div class="staff-login__card">
+      <div class="staff-login__top">
+        <a class="link-muted" href="/"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>{{t:auth.backToSite}}</a>
+        {{> lang-switch}}
+      </div>
+      <span class="lock-badge" aria-hidden="true"><svg class="icon"><use href="#i-lock"></use></svg></span>
+      <h1 class="auth-card__title display" id="staff-login-title">{{t:auth.adminTitle}}</h1>
+      <p class="auth-card__lead">{{t:auth.adminLead}}</p>
+      <p class="notice notice--info" data-session-notice hidden></p>
+      <form class="stack" data-login-form data-surface="admin" novalidate>
+        <div class="field">
+          <label class="field__label" for="staff-email">{{t:auth.email}}</label>
+          <input class="control control--lg" id="staff-email" name="email" type="email" autocomplete="username" inputmode="email" required maxlength="254">
+        </div>
+        <div class="field">
+          <label class="field__label" for="staff-password">{{t:auth.password}}</label>
+          <div class="password-input">
+            <input class="control control--lg" id="staff-password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+            <button class="password-input__toggle" type="button" data-password-toggle aria-pressed="false" aria-controls="staff-password" data-label-show="{{t:auth.showPassword}}" data-label-hide="{{t:auth.hidePassword}}">
+              <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg><span class="visually-hidden">{{t:auth.showPassword}}</span>
+            </button>
+          </div>
+        </div>
+        <p class="form-error" role="alert" data-form-error hidden></p>
+        <button class="btn btn-accent btn-lg btn-block" type="submit" data-busy-label="{{t:auth.loggingIn}}">
+          <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>{{t:auth.loginButton}}
+        </button>
+      </form>
+      <p class="staff-login__note"><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>{{t:auth.adminSecurityNote}}</p>
+    </div>
+  </section>
+</div>

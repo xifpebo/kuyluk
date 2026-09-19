@@ -1,0 +1,27 @@
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{v:title}}</title>
+  <meta name="description" content="{{v:description}}">
+  <meta name="theme-color" content="#0d0f12">
+  <meta name="color-scheme" content="dark">
+  <meta name="format-detection" content="telephone=no">
+  {{#if noindex}}<meta name="robots" content="noindex, nofollow">{{/if}}
+  {{#unless noindex}}
+  <link rel="canonical" href="{{v:canonical}}">
+  <link rel="alternate" hreflang="uz" href="{{v:alternateUz}}">
+  <link rel="alternate" hreflang="ru" href="{{v:alternateRu}}">
+  {{/unless}}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{v:siteName}}">
+  <meta property="og:title" content="{{v:heading}}">
+  <meta property="og:description" content="{{v:description}}">
+  <link rel="icon" href="{{asset:/img/favicon.svg}}" type="image/svg+xml">
+  {{#if googleFonts}}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Oswald:wght@500;600;700&amp;display=swap">
+  {{/if}}
+  {{#if localFonts}}<link rel="stylesheet" href="{{asset:/fonts/fonts.css}}">{{/if}}
+  <link rel="stylesheet" href="{{asset:/css/app.css}}">
+  <script type="application/json" id="boot">{{json:boot}}</script>
+  {{#if jsonLd}}<script type="application/ld+json">{{json:jsonLd}}</script>{{/if}}

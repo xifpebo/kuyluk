@@ -1,0 +1,31 @@
+<div class="container product-page" data-product-root>
+  <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+    <ol data-breadcrumbs>
+      <li><a href="/">{{t:common.home}}</a></li>
+      <li><a href="/catalog">{{t:nav.catalog}}</a></li>
+    </ol>
+  </nav>
+
+  <article class="product" data-product aria-busy="true">
+    <div class="product__gallery skeleton"></div>
+    <div class="product__info">
+      <div class="skeleton skeleton-line skeleton-line--lg"></div>
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-block"></div>
+    </div>
+  </article>
+
+  <div class="product-sections" data-product-sections></div>
+
+  <section class="section section--tight" data-similar-section hidden aria-labelledby="similar-title">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title display" id="similar-title">{{t:product.similar}}</h2>
+        <p class="section-lead">{{t:product.similarLead}}</p>
+      </div>
+    </div>
+    <div class="product-grid product-grid--rail" data-similar></div>
+  </section>
+</div>
+
+<div class="buy-bar" data-buy-bar hidden></div>

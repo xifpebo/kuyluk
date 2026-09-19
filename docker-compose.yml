@@ -1,0 +1,26 @@
+# Production-like stack. Put a TLS-terminating proxy in front and set APP_ORIGIN=https://… in .env.
+# (For a quick local try over plain http add ALLOW_INSECURE_COOKIES=true to .env — never on a real server.)
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/big-bazaar-build
+      TRUST_PROXY: "1"
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  mongo-data:

@@ -1,0 +1,69 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li><a href="/catalog" data-crumb-catalog>{{t:nav.catalog}}</a></li>
+        <li aria-current="page" data-crumb-current hidden></li>
+      </ol>
+    </nav>
+    <h1 class="page-title display" data-catalog-title>{{t:catalog.title}}</h1>
+    <p class="page-lead" data-catalog-lead hidden></p>
+  </div>
+</div>
+
+<div class="container catalog">
+  <aside class="filters" id="catalog-filters" data-filters aria-labelledby="filters-title">
+    <div class="filters__panel">
+      <div class="filters__head">
+        <h2 class="filters__title" id="filters-title"><svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg>{{t:catalog.filters}}</h2>
+        <button class="btn btn-icon btn-ghost filters__close" type="button" data-filters-close>
+          <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg><span class="visually-hidden">{{t:catalog.closeFilters}}</span>
+        </button>
+      </div>
+      <form class="filters__form" data-filter-form novalidate>
+        <div class="filter-group">
+          <label class="filter-group__title" for="filter-q">{{t:catalog.searchWithin}}</label>
+          <div class="input-icon">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input class="control" id="filter-q" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{t:nav.searchPlaceholder}}">
+          </div>
+        </div>
+        <div data-filter-groups>
+          <div class="filter-group skeleton-block"></div>
+          <div class="filter-group skeleton-block"></div>
+          <div class="filter-group skeleton-block"></div>
+        </div>
+      </form>
+      <div class="filters__foot">
+        <button class="btn btn-ghost" type="button" data-filters-reset>{{t:catalog.resetFilters}}</button>
+        <button class="btn btn-accent filters__apply" type="button" data-filters-apply>{{t:catalog.filters}}</button>
+      </div>
+    </div>
+    <div class="filters__backdrop" data-filters-close></div>
+  </aside>
+
+  <section class="catalog__results" aria-labelledby="catalog-count">
+    <div class="catalog__toolbar">
+      <p class="catalog__count" id="catalog-count" aria-live="polite" data-result-count>{{t:common.loading}}</p>
+      <div class="catalog__controls">
+        <button class="btn btn-ghost filters-toggle" type="button" data-filters-open aria-controls="catalog-filters" aria-expanded="false">
+          <svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg><span data-filters-label>{{t:catalog.filters}}</span>
+        </button>
+        <label class="select-inline">
+          <span class="select-inline__label">{{t:catalog.sort}}</span>
+          <select class="control control--compact" data-sort>
+            <option value="recommended">{{t:catalog.sortOptions.recommended}}</option>
+            <option value="newest">{{t:catalog.sortOptions.newest}}</option>
+            <option value="price_asc">{{t:catalog.sortOptions.price_asc}}</option>
+            <option value="price_desc">{{t:catalog.sortOptions.price_desc}}</option>
+            <option value="name">{{t:catalog.sortOptions.name}}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="chips" data-active-filters></div>
+    <div class="product-grid" data-product-grid aria-busy="true"></div>
+    <nav class="pagination" data-pagination aria-label="{{t:catalog.pagination}}" hidden></nav>
+  </section>
+</div>

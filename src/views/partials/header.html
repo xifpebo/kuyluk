@@ -1,0 +1,88 @@
+<header class="site-header" id="top">
+  <div class="topbar">
+    <div class="container topbar__inner">
+      <p class="topbar__meta">
+        <span class="topbar__item"><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg>{{t:common.footerAddress}}</span>
+        <span class="topbar__item"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>{{t:nav.hours}}</span>
+      </p>
+      <div class="topbar__actions">
+        <a class="topbar__item topbar__phone" href="{{v:supportPhoneHref}}"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg>{{v:supportPhone}}</a>
+        {{> lang-switch}}
+      </div>
+    </div>
+  </div>
+
+  <div class="container mainbar">
+    <a class="brand" href="/" aria-label="{{v:siteName}} — {{t:nav.home}}">
+      <svg class="brand__mark" aria-hidden="true"><use href="#i-logo"></use></svg>
+      <span class="brand__text"><span class="brand__top">Big Bazaar</span><span class="brand__bottom">Build</span></span>
+    </a>
+
+    <a class="btn btn-accent mainbar__catalog" href="/catalog"{{active:catalog}}>
+      <svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg><span>{{t:nav.catalog}}</span>
+    </a>
+
+    <form class="search" role="search" action="/catalog" method="get" data-search>
+      <label class="visually-hidden" for="site-search">{{t:nav.searchLabel}}</label>
+      <svg class="search__icon icon" aria-hidden="true"><use href="#i-search"></use></svg>
+      <input class="search__input" id="site-search" name="q" type="search" autocomplete="off" spellcheck="false"
+        maxlength="100" placeholder="{{t:nav.searchPlaceholder}}" role="combobox" aria-autocomplete="list"
+        aria-expanded="false" aria-controls="site-search-list">
+      <button class="search__submit btn btn-dark" type="submit">{{t:nav.searchSubmit}}</button>
+      <div class="suggest" id="site-search-list" role="listbox" aria-label="{{t:nav.suggestions}}" hidden></div>
+    </form>
+
+    <nav class="header-actions" aria-label="{{t:nav.main}}">
+      <a class="header-link header-link--suppliers" href="/suppliers"{{active:suppliers}}>
+        <svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg><span class="header-link__label">{{t:nav.suppliers}}</span>
+      </a>
+      <a class="header-link" href="/login" data-account-link{{active:account}}>
+        <svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg><span class="header-link__label" data-account-label>{{t:nav.login}}</span>
+      </a>
+      <a class="header-link header-link--quote" href="/quote" data-quote-link{{active:quote}}>
+        <span class="header-link__icon">
+          <svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>
+          <span class="count-badge" data-cart-count hidden>0</span>
+        </span>
+        <span class="header-link__label">{{t:nav.quote}}</span>
+      </a>
+      <button class="header-link menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" data-menu-toggle>
+        <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg><span class="visually-hidden">{{t:nav.openMenu}}</span>
+      </button>
+    </nav>
+  </div>
+
+  <nav class="catnav" aria-label="{{t:nav.allCategories}}">
+    <div class="container catnav__inner" data-category-nav>
+      <a class="catnav__link catnav__link--all" href="/catalog">{{t:nav.allCategories}}</a>
+    </div>
+  </nav>
+  <div class="hazard-rule" aria-hidden="true"></div>
+</header>
+
+<div class="drawer mobile-nav" id="mobile-nav" hidden data-drawer>
+  <div class="drawer__backdrop" data-drawer-close></div>
+  <div class="drawer__panel" role="dialog" aria-modal="true" aria-label="{{t:nav.menu}}">
+    <div class="drawer__head">
+      <span class="drawer__title">{{t:nav.menu}}</span>
+      <button class="btn btn-icon btn-ghost" type="button" data-drawer-close>
+        <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg><span class="visually-hidden">{{t:nav.closeMenu}}</span>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <ul class="mobile-nav__list">
+        <li><a href="/"{{active:home}}><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>{{t:nav.home}}</a></li>
+        <li><a href="/catalog"{{active:catalog}}><svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg>{{t:nav.catalog}}</a></li>
+        <li><a href="/suppliers"{{active:suppliers}}><svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg>{{t:nav.suppliers}}</a></li>
+        <li><a href="/quote"{{active:quote}}><svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>{{t:nav.quote}}</a></li>
+        <li><a href="/login" data-account-link><svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg><span data-account-label>{{t:nav.login}}</span></a></li>
+      </ul>
+      <p class="mobile-nav__section">{{t:nav.allCategories}}</p>
+      <ul class="mobile-nav__cats" data-category-list></ul>
+      <div class="mobile-nav__footer">
+        {{> lang-switch}}
+        <a class="btn btn-ghost btn-block" href="{{v:supportPhoneHref}}"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg>{{v:supportPhone}}</a>
+      </div>
+    </div>
+  </div>
+</div>

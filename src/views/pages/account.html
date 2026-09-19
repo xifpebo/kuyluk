@@ -1,0 +1,78 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li aria-current="page">{{t:account.title}}</li>
+      </ol>
+    </nav>
+    <div class="account-head">
+      <div>
+        <p class="eyebrow">{{t:account.title}}</p>
+        <h1 class="page-title display" data-account-greeting>{{t:account.title}}</h1>
+        <p class="page-lead" data-account-email></p>
+      </div>
+      <button class="btn btn-ghost" type="button" data-logout>
+        <svg class="icon" aria-hidden="true"><use href="#i-logout"></use></svg>{{t:nav.logout}}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="container section section--tight account-layout">
+  <section class="panel" aria-labelledby="account-quotes-title">
+    <div class="panel__head">
+      <h2 class="panel__title" id="account-quotes-title">{{t:account.myQuotes}}</h2>
+      <a class="btn btn-accent btn-sm" href="/quote"><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>{{t:home.ctaButton}}</a>
+    </div>
+    <div data-account-quotes aria-busy="true"></div>
+  </section>
+
+  <div class="account-side">
+    <section class="panel" aria-labelledby="account-profile-title">
+      <h2 class="panel__title" id="account-profile-title">{{t:account.profile}}</h2>
+      <form class="stack" data-profile-form novalidate>
+        <div class="field">
+          <label class="field__label" for="acc-name">{{t:auth.name}}</label>
+          <input class="control" id="acc-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="100">
+        </div>
+        <div class="field">
+          <label class="field__label" for="acc-phone">{{t:auth.phone}}</label>
+          <input class="control" id="acc-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="25">
+        </div>
+        <div class="field">
+          <label class="field__label" for="acc-company">{{t:auth.company}}</label>
+          <input class="control" id="acc-company" name="company" type="text" autocomplete="organization" maxlength="120">
+        </div>
+        <p class="form-error" role="alert" data-form-error hidden></p>
+        <button class="btn btn-dark" type="submit">{{t:account.saveProfile}}</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="account-security-title">
+      <h2 class="panel__title" id="account-security-title">{{t:account.security}}</h2>
+      <form class="stack" data-password-form novalidate>
+        <input type="text" name="username" autocomplete="username" hidden data-username>
+        <div class="field">
+          <label class="field__label" for="acc-current">{{t:auth.currentPassword}}</label>
+          <input class="control" id="acc-current" name="currentPassword" type="password" autocomplete="current-password" required maxlength="128">
+        </div>
+        <div class="field">
+          <label class="field__label" for="acc-new">{{t:auth.newPassword}}</label>
+          <div class="password-input">
+            <input class="control" id="acc-new" name="newPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-password-policy>
+            <button class="password-input__toggle" type="button" data-password-toggle aria-pressed="false" aria-controls="acc-new" data-label-show="{{t:auth.showPassword}}" data-label-hide="{{t:auth.hidePassword}}">
+              <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg><span class="visually-hidden">{{t:auth.showPassword}}</span>
+            </button>
+          </div>
+          {{> password-rules}}
+        </div>
+        <p class="form-error" role="alert" data-form-error hidden></p>
+        <button class="btn btn-dark" type="submit">{{t:auth.changePasswordButton}}</button>
+      </form>
+      <hr class="divider">
+      <p class="muted small">{{t:account.logoutEverywhereText}}</p>
+      <button class="btn btn-ghost btn-sm" type="button" data-logout-others>{{t:account.logoutEverywhere}}</button>
+    </section>
+  </div>
+</div>

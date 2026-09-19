@@ -1,0 +1,28 @@
+{
+  "name": "big-bazaar-build",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Construction materials marketplace & quote-request catalog (Uzbek/Russian) with a hardened admin panel",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch-path=src --watch-path=server.js server.js",
+    "demo": "node scripts/demo.js",
+    "setup": "node scripts/setup-env.js",
+    "seed": "node scripts/seed.js",
+    "create-admin": "node scripts/create-superadmin.js",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
+    "check:i18n": "node -e \"const r=require('./src/i18n').missingKeys();console.log(r);process.exit(r.missingInRu.length||r.missingInUz.length?1:0)\"",
+    "generate:illustrations": "node tools/generate-illustrations.js",
+    "lint": "eslint .",
+    "check": "npm run lint && npm run check:i18n && npm test"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "mongoose": "^8.23.1"
+  }
+}

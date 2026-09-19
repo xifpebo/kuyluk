@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="{{v:lang}}" data-page="{{v:page}}">
+<head>
+{{> head}}
+  <script type="module" src="{{asset:/js/site.js}}"></script>
+</head>
+<body class="auth-layout">
+  {{> icons}}
+  <main id="main" class="auth-shell">
+{{raw:body}}
+  </main>
+  <div class="toast-region" aria-live="polite" aria-atomic="false" data-toasts></div>
+</body>
+</html>

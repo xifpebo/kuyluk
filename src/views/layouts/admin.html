@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="{{v:lang}}" data-page="{{v:page}}">
+<head>
+{{> head}}
+  <link rel="stylesheet" href="{{asset:/css/admin.css}}">
+  <script type="module" src="{{asset:/js/admin/app.js}}"></script>
+</head>
+<body class="admin-body">
+  <a class="skip-link" href="#admin-main">{{t:common.skipToContent}}</a>
+  {{> icons}}
+{{raw:body}}
+  <div class="toast-region" aria-live="polite" aria-atomic="false" data-toasts></div>
+</body>
+</html>
