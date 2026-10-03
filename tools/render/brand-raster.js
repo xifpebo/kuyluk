@@ -56,7 +56,7 @@ async function main() {
     fs.writeFileSync(tmp, html);
     await page.goto(pathToFileURL(tmp).href, { waitUntil: 'load' });
     fs.unlinkSync(tmp);
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => globalThis.document.fonts.ready);
     await page.screenshot({ path: path.join(IMG, file), omitBackground: transparent, clip: { x: 0, y: 0, width: w, height: h } });
     await page.close();
   };
