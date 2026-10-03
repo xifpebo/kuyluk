@@ -214,7 +214,7 @@ adding a role only means adding a row there.
 ## Internationalisation
 
 - **Languages:** Uzbek Latin (`uz`, default) and Russian (`ru`). The header toggle adds `?lang=`,
-  which is remembered in the `bb_lang` cookie. The resolution order is `?lang`, then the `X-Lang` header, then the cookie, then `DEFAULT_LANG`.
+  which is remembered in the `sb_lang` cookie. The resolution order is `?lang`, then the `X-Lang` header, then the cookie, then `DEFAULT_LANG`.
 - **Static text:** rendered by the server with `{{t:key}}` in `src/views`. Dynamic text in the browser uses
   the same dictionaries, served at `/i18n/{public|admin}/{lang}.json` with long-term caching. The public bundle
   does not contain admin strings.

@@ -24,7 +24,7 @@ function buildCsp(config) {
     "form-action 'self'",
     "frame-ancestors 'none'",
     "require-trusted-types-for 'script'",
-    'trusted-types bb-html'
+    'trusted-types sb-html'
   ];
   if (config.cookieSecure) directives.push('upgrade-insecure-requests');
   return directives.join('; ');

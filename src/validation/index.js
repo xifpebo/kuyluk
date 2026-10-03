@@ -151,6 +151,7 @@ const shopDetailQuery = s.object({
 const reviewListQuery = s.object({
   product: s.objectId().optional(),
   shop: s.slug().optional(),
+  other: s.boolean({ coerce: true }).optional(),
   page,
   limit: limit(20, 10)
 });

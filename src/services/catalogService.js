@@ -365,7 +365,7 @@ async function findPublicProduct(refs, filter) {
   return doc;
 }
 
-async function getProduct(slug) {
+async function getProduct(slug, lang = null) {
   const refs = await loadRefs();
   const doc = await findPublicProduct(refs, { slug });
   if (!doc) return null;
@@ -380,7 +380,7 @@ async function getProduct(slug) {
       .sort(SORTS.popular)
       .limit(8)
       .lean(),
-    listReviews({ target: 'product', productId: doc._id, page: 1, limit: 5 })
+    listReviews({ target: 'product', productId: doc._id, page: 1, limit: 5, lang })
   ]);
   return {
     product: serializeProduct(doc, refs, { detail: true }),
@@ -543,7 +543,7 @@ async function listShops({ q, featured, category, city, sort = 'recommended', pa
   return { items, total, page, pages: Math.ceil(total / limit), limit };
 }
 
-async function getShop(slug, { sort = 'recommended', category } = {}) {
+async function getShop(slug, { sort = 'recommended', category } = {}, lang = null) {
   const refs = await loadRefs();
   const shop = refs.shopBySlug.get(slug);
   if (!shop || shop.status !== 'approved') return null;
@@ -555,7 +555,7 @@ async function getShop(slug, { sort = 'recommended', category } = {}) {
   }
   const [docs, reviews] = await Promise.all([
     Product.find(and(conditions)).select(LIST_FIELDS).sort(SORTS[sort] || SORTS.recommended).limit(120).lean(),
-    listReviews({ target: 'shop', shopId: shop._id, page: 1, limit: 6 })
+    listReviews({ target: 'shop', shopId: shop._id, page: 1, limit: 6, lang })
   ]);
   const entry = catMap.get(idOf(shop));
   return {
@@ -578,18 +578,28 @@ function reviewJson(review) {
   };
 }
 
-async function listReviews({ target, productId, shopId, page = 1, limit = 10 }) {
-  const filter = { target, status: 'approved' };
-  if (target === 'product') filter.product = productId;
-  else filter.shop = shopId;
-  const [docs, total, dist] = await Promise.all([
+/**
+ * Approved reviews. With `lang`, the list holds only reviews written in that
+ * language (`other: true` — in the other languages), so a page never mixes
+ * languages unless the visitor asks for it; the rating distribution and
+ * `allTotal` always cover every review.
+ */
+async function listReviews({ target, productId, shopId, page = 1, limit = 10, lang = null, other = false }) {
+  const base = { target, status: 'approved' };
+  if (target === 'product') base.product = productId;
+  else base.shop = shopId;
+  const filter = { ...base };
+  if (lang) filter.lang = other ? trusted({ $ne: lang }) : lang;
+  const [docs, total, dist, otherCount] = await Promise.all([
     Review.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     Review.countDocuments(filter),
-    Review.aggregate([{ $match: filter }, { $group: { _id: '$rating', count: { $sum: 1 } } }])
+    Review.aggregate([{ $match: base }, { $group: { _id: '$rating', count: { $sum: 1 } } }]),
+    lang && !other ? Review.countDocuments({ ...base, lang: trusted({ $ne: lang }) }) : Promise.resolve(0)
   ]);
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const row of dist) distribution[row._id] = row.count;
-  return { items: docs.map(reviewJson), total, page, pages: Math.ceil(total / limit), limit, distribution };
+  const allTotal = Object.values(distribution).reduce((a, b) => a + b, 0);
+  return { items: docs.map(reviewJson), total, allTotal, otherCount, page, pages: Math.ceil(total / limit), limit, distribution };
 }
 
 /* ---------------------------------------------------------- home page */

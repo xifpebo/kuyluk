@@ -1232,7 +1232,10 @@
       "approved": "Eʼlon qilingan",
       "rejected": "Rad etilgan"
     },
-    "ratingLabel": "Baho: {rating} / 5"
+    "ratingLabel": "Baho: {rating} / 5",
+    "noneInLang": "Oʻzbek tilida hali sharh yoʻq.",
+    "otherLang": "Rus tilidagi sharhlar ({count})",
+    "otherLangTitle": "Rus tilidagi sharhlar"
   },
   "colors": {
     "white": "Oq",

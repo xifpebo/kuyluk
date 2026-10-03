@@ -62,7 +62,20 @@ function shopLogo(shop, index) {
 `;
 }
 
+/** Shown when a product has no photo (or an image fails to load). */
+const PLACEHOLDER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#c9c9c7"/>
+  <path d="M0 330h400" stroke="#b9b9b6" stroke-width="2"/>
+  <g transform="translate(152 140)" fill="none" stroke="#8f8f8b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="2" width="92" height="92" rx="20"/>
+    <path d="M21 44 48 22l27 22"/>
+    <path d="M24 56h30M62 56h10M24 72h10M42 72h30"/>
+  </g>
+</svg>
+`;
+
 fs.writeFileSync(path.join(ROOT, 'favicon.svg'), MARK);
+fs.writeFileSync(path.join(ROOT, 'placeholder.svg'), PLACEHOLDER);
 fs.writeFileSync(path.join(ROOT, 'logo-mark.svg'), MARK);
 [...shops, pendingShop].forEach((shop, index) => {
   fs.writeFileSync(path.join(ROOT, 'shops', `${shop.slug}-logo.svg`), shopLogo(shop, index));

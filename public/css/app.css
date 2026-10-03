@@ -5234,9 +5234,14 @@ button.chip {
 }
 
 .offer-box__actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.offer-box__actions > * {
+  justify-content: center;
+  min-width: 0;
 }
 
 .offer-box__note {
@@ -6391,7 +6396,7 @@ table.spec-table tr:last-child td {
     justify-content: center;
   }
 
-  .fav-btn {
+  .fav-btn:not(.fav-btn--lg) {
     width: 32px;
     height: 32px;
   }
@@ -6438,3 +6443,24 @@ table.spec-table tr:last-child td {
   display: block;
 }
 
+
+.review-feed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.review-feed__actions:empty {
+  display: none;
+}
+
+.review-feed__subtitle {
+  margin: 22px 0 12px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-2);
+  color: var(--muted);
+  font: 600 0.95rem/1.2 var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

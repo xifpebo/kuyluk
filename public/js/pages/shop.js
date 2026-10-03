@@ -3,13 +3,14 @@
  * all — how to contact them.
  */
 import { $, html, setHTML, icon, on, readBoot, safeUrl } from '../lib/dom.js';
-import { t, tn, loc, fmtDate, fmtNumber } from '../lib/i18n.js';
+import { t, tn, loc, fmtNumber } from '../lib/i18n.js';
 import { api } from '../lib/api.js';
 import { productGrid } from '../lib/product-card.js';
 import { workingTime } from '../lib/shop-card.js';
 import { contactButtons, openContactSheet, trackView } from '../lib/contact.js';
 import { emptyState, errorState, skeletonCards } from '../lib/ui.js';
 import { stars, applyAccents } from '../lib/format.js';
+import { reviewList, bindReviewList } from '../lib/reviews.js';
 
 let shop = null;
 let filter = { sort: 'recommended', category: '' };
@@ -62,14 +63,8 @@ function side(s, reviews) {
       </section>
       ${loc(s.description) ? html`<section class="content-block"><h2 class="content-block__title">${t('shops.about')}</h2><div class="prose"><p>${loc(s.description)}</p></div></section>` : ''}
       <section class="content-block" id="shop-reviews" aria-labelledby="shop-reviews-title">
-        <h2 class="content-block__title" id="shop-reviews-title">${t('reviews.shopTitle')} <span class="muted">${reviews.total || ''}</span></h2>
-        ${reviews.items.length
-          ? html`<ul class="review-list">${reviews.items.map(
-              (r) => html`<li class="review"><div class="review__head"><span class="review__avatar" aria-hidden="true">${r.authorName.slice(0, 1)}</span>
-                <div><p class="review__author">${r.authorName}</p><p class="review__date">${fmtDate(r.createdAt)}</p></div>${stars(r.rating)}</div>
-                ${r.text ? html`<p class="review__text" lang="${r.lang}">${r.text}</p>` : ''}</li>`
-            )}</ul>`
-          : html`<p class="muted">${t('reviews.empty')}</p>`}
+        <h2 class="content-block__title" id="shop-reviews-title">${t('reviews.shopTitle')} <span class="muted">${reviews.allTotal || ''}</span></h2>
+        ${reviewList(reviews)}
       </section>`
   );
 }
@@ -110,6 +105,7 @@ export default async function shopPage() {
     shop = data.shop;
     hero(shop);
     side(shop, data.reviews);
+    bindReviewList($('[data-shop-side]'), `shop=${encodeURIComponent(shop.slug)}`);
     setHTML($('[data-shop-products]'), data.products.length ? productGrid(data.products) : emptyState({ iconName: 'package', title: t('shops.noProducts') }));
     $('[data-shop-products]').removeAttribute('aria-busy');
     categoryChips(shop);

@@ -34,7 +34,7 @@ function createCatalogRouter({ config, limiter }) {
     '/products/:slug',
     validateRequest({ params: v.slugParams }),
     asyncHandler(async (req, res) => {
-      const result = await catalog.getProduct(req.valid.params.slug);
+      const result = await catalog.getProduct(req.valid.params.slug, req.lang);
       if (!result) throw notFound();
       res.json(result);
     })
@@ -63,7 +63,7 @@ function createCatalogRouter({ config, limiter }) {
     '/shops/:slug',
     validateRequest({ params: v.slugParams, query: v.shopDetailQuery }),
     asyncHandler(async (req, res) => {
-      const result = await catalog.getShop(req.valid.params.slug, req.valid.query);
+      const result = await catalog.getShop(req.valid.params.slug, req.valid.query, req.lang);
       if (!result) throw notFound();
       res.json(result);
     })
@@ -74,12 +74,13 @@ function createCatalogRouter({ config, limiter }) {
     validateRequest({ query: v.reviewListQuery }),
     asyncHandler(async (req, res) => {
       const q = req.valid.query;
-      if (q.product) return res.json(await catalog.listReviews({ target: 'product', productId: q.product, page: q.page, limit: q.limit }));
+      const scope = { page: q.page, limit: q.limit, lang: req.lang, other: Boolean(q.other) };
+      if (q.product) return res.json(await catalog.listReviews({ target: 'product', productId: q.product, ...scope }));
       if (q.shop) {
         const refs = await catalog.loadRefs();
         const shop = refs.shopBySlug.get(q.shop);
         if (!shop || shop.status !== 'approved') throw notFound();
-        return res.json(await catalog.listReviews({ target: 'shop', shopId: shop._id, page: q.page, limit: q.limit }));
+        return res.json(await catalog.listReviews({ target: 'shop', shopId: shop._id, ...scope }));
       }
       throw notFound();
     })

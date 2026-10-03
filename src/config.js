@@ -75,7 +75,7 @@ function loadConfig(env = process.env) {
   }
 
   const defaultLang = ['uz', 'ru'].includes(env.DEFAULT_LANG) ? env.DEFAULT_LANG : 'uz';
-  const fontProvider = ['google', 'system', 'local'].includes(env.FONT_PROVIDER) ? env.FONT_PROVIDER : 'google';
+  const fontProvider = ['google', 'system', 'local'].includes(env.FONT_PROVIDER) ? env.FONT_PROVIDER : 'local';
 
   const config = {
     rootDir: ROOT_DIR,

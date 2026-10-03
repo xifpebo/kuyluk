@@ -73,7 +73,7 @@ function createPageRenderer({ config, engine }) {
       localFonts: config.fontProvider === 'local',
       noindex: Boolean(opts.noindex),
       jsonLd: opts.jsonLd || null,
-      ogImage: opts.ogImage || `${config.appOrigin}/img/og-image.png`,
+      ogImage: opts.ogImage || `${config.appOrigin}/img/og-image${lang === 'ru' ? '-ru' : ''}.png`,
       boot: {
         lang,
         page: opts.page,

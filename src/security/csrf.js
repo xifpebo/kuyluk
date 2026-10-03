@@ -18,7 +18,7 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const SEED_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function createCsrf(config) {
-  const name = cookieName(config, 'bb_csrf');
+  const name = cookieName(config, 'sb_csrf');
 
   function sign(seed, sessionId) {
     return crypto

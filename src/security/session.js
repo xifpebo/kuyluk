@@ -26,7 +26,7 @@ function hashToken(token) {
 }
 
 function createSessionManager(config) {
-  const name = cookieName(config, 'bb_sid');
+  const name = cookieName(config, 'sb_sid');
 
   function lifetimes(role) {
     if (isStaffRole(role)) {

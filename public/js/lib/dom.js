@@ -3,7 +3,7 @@
  *
  * All markup goes through the `html` tagged template, which escapes every
  * interpolated value. `setHTML` is the only innerHTML sink in the app and it
- * uses the `bb-html` Trusted Types policy required by the CSP.
+ * uses the `sb-html` Trusted Types policy required by the CSP.
  */
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' };
@@ -43,7 +43,7 @@ export function join(parts) {
 let policy = null;
 try {
   if (window.trustedTypes && window.trustedTypes.createPolicy) {
-    policy = window.trustedTypes.createPolicy('bb-html', { createHTML: (value) => value });
+    policy = window.trustedTypes.createPolicy('sb-html', { createHTML: (value) => value });
   }
 } catch {
   policy = null;
@@ -110,7 +110,7 @@ export function readBoot() {
 export function storage(kind = 'local') {
   try {
     const store = kind === 'session' ? window.sessionStorage : window.localStorage;
-    const probe = '__bb_probe__';
+    const probe = '__sb_probe__';
     store.setItem(probe, probe);
     store.removeItem(probe);
     return store;

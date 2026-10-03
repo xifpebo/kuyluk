@@ -4,9 +4,10 @@
  * There is no cart — customers contact the shop directly.
  */
 import { $, $$, html, setHTML, icon, on, readBoot, safeUrl } from '../lib/dom.js';
-import { t, tn, loc, fmtMoney, fmtNumber, unitShort, unitName, fmtDate } from '../lib/i18n.js';
+import { t, tn, loc, fmtMoney, fmtNumber, unitShort, unitName } from '../lib/i18n.js';
 import { api, getSession } from '../lib/api.js';
 import { productGrid, favButton, registry } from '../lib/product-card.js';
+import { reviewList, bindReviewList } from '../lib/reviews.js';
 import { workingTime } from '../lib/shop-card.js';
 import { contactButtons, openContactSheet, trackView } from '../lib/contact.js';
 import { badge, emptyState, toast, setBusy } from '../lib/ui.js';
@@ -125,17 +126,6 @@ function shopPanel(shop) {
   </section>`;
 }
 
-function reviewItem(r) {
-  return html`<li class="review">
-    <div class="review__head">
-      <span class="review__avatar" aria-hidden="true">${(r.authorName || '?').slice(0, 1)}</span>
-      <div><p class="review__author">${r.authorName}</p><p class="review__date">${fmtDate(r.createdAt)}</p></div>
-      ${stars(r.rating)}
-    </div>
-    ${r.text ? html`<p class="review__text" lang="${r.lang}">${r.text}</p>` : ''}
-  </li>`;
-}
-
 function reviewSummary(data, rating, count) {
   const total = count || 0;
   return html`<div class="review-summary">
@@ -169,10 +159,9 @@ function reviewForm() {
 
 function reviewsBlock(p, data) {
   return html`<section class="content-block reviews-block" id="reviews" aria-labelledby="reviews-title">
-    <h2 class="content-block__title" id="reviews-title">${t('reviews.title')} <span class="muted">${data.total || ''}</span></h2>
+    <h2 class="content-block__title" id="reviews-title">${t('reviews.title')} <span class="muted">${data.allTotal || ''}</span></h2>
     ${reviewSummary(data, p.rating, p.reviewCount)}
-    ${data.items.length ? html`<ul class="review-list" data-review-list>${data.items.map(reviewItem)}</ul>` : html`<p class="muted">${t('reviews.empty')}</p>`}
-    ${data.pages > 1 ? html`<button class="btn btn-ghost" type="button" data-more-reviews data-page="2">${t('reviews.more')}</button>` : ''}
+    ${reviewList(data)}
     <div data-review-form-slot></div>
   </section>`;
 }
@@ -301,21 +290,7 @@ function bind() {
       /* share sheet dismissed */
     }
   });
-  on(root, 'click', '[data-more-reviews]', async (event, button) => {
-    const page = Number(button.dataset.page);
-    setBusy(button, true);
-    try {
-      const data = await api(`/api/catalog/reviews?product=${product.id}&page=${page}`);
-      const list = $('[data-review-list]', root);
-      const holder = document.createElement('div');
-      setHTML(holder, html`${data.items.map(reviewItem)}`);
-      list.append(...holder.children);
-      if (page >= data.pages) button.remove();
-      else button.dataset.page = String(page + 1);
-    } finally {
-      setBusy(button, false);
-    }
-  });
+  bindReviewList(root, `product=${product.id}`);
 }
 
 export default async function productPage() {
