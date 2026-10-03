@@ -1,44 +1,41 @@
 <section class="hero blueprint">
   <div class="container hero__grid">
     <div class="hero__copy">
-      <p class="eyebrow">{{t:home.eyebrow}}</p>
-      <h1 class="hero__title display">{{t:home.titleLine}} <span class="hero__accent">{{t:home.titleAccent}}</span></h1>
-      <p class="hero__lead">{{t:home.lead}}</p>
+      <p class="eyebrow" >{{#if homeText.eyebrow}}{{v:homeText.eyebrow}}{{else}}{{t:home.eyebrow}}{{/if}}</p>
+      <h1 class="hero__title display"><span >{{#if homeText.title}}{{v:homeText.title}}{{else}}{{t:home.titleLine}}{{/if}}</span> <span class="hero__accent" >{{#if homeText.accent}}{{v:homeText.accent}}{{else}}{{t:home.titleAccent}}{{/if}}</span></h1>
+      <p class="hero__lead" >{{#if homeText.lead}}{{v:homeText.lead}}{{else}}{{t:home.lead}}{{/if}}</p>
       <form class="hero-search" action="/catalog" method="get" role="search">
         <label class="visually-hidden" for="hero-q">{{t:nav.searchLabel}}</label>
         <svg class="icon hero-search__icon" aria-hidden="true"><use href="#i-search"></use></svg>
-        <input class="hero-search__input" id="hero-q" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{t:nav.searchPlaceholder}}">
-        <button class="btn btn-accent btn-lg" type="submit">{{t:home.searchCta}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+        <input class="hero-search__input" id="hero-q" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{t:home.searchPlaceholder}}">
+        <button class="btn btn-accent btn-lg" type="submit"><span>{{t:home.searchCta}}</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
       </form>
       <div class="hero__popular">
         <span class="hero__popular-label">{{t:home.popular}}</span>
-        <div class="hero__terms" data-popular-terms data-terms="{{t:home.popularTerms}}"></div>
+        <div class="hero__terms" data-popular-terms data-terms="{{#if homeText.popularTerms}}{{v:homeText.popularTerms}}{{else}}{{t:home.popularTerms}}{{/if}}"></div>
       </div>
       <dl class="hero__stats">
         <div class="hero__stat"><dt>{{t:home.statProducts}}</dt><dd data-stat="products">—</dd></div>
-        <div class="hero__stat"><dt>{{t:home.statSuppliers}}</dt><dd data-stat="suppliers">—</dd></div>
+        <div class="hero__stat"><dt>{{t:home.statShops}}</dt><dd data-stat="shops">—</dd></div>
         <div class="hero__stat"><dt>{{t:home.statCategories}}</dt><dd data-stat="categories">—</dd></div>
       </dl>
     </div>
 
-    <aside class="spec-sheet" aria-label="{{t:home.sheetTitle}}">
+    <aside class="spec-sheet hero-card" aria-label="{{t:home.sheetTitle}}">
       <div class="spec-sheet__tape" aria-hidden="true"></div>
       <header class="spec-sheet__head">
-        <p class="spec-sheet__code">RFQ · BB-2609</p>
+        <p class="spec-sheet__code">STROY BAZAR · {{t:home.sheetCode}}</p>
         <p class="spec-sheet__title">{{t:home.sheetTitle}}</p>
-        <p class="spec-sheet__caption">{{t:home.sheetCaption}}</p>
       </header>
-      <ol class="spec-sheet__rows" data-sheet-rows>
-        <li class="spec-sheet__row skeleton-row"></li>
-        <li class="spec-sheet__row skeleton-row"></li>
-        <li class="spec-sheet__row skeleton-row"></li>
-        <li class="spec-sheet__row skeleton-row"></li>
-      </ol>
-      <div class="spec-sheet__total">
-        <span>{{t:home.sheetFooter}}</span>
-        <strong data-sheet-total>—</strong>
+      <div class="hero-card__body" data-hero-card>
+        <div class="skeleton skeleton-block"></div>
       </div>
-      <p class="spec-sheet__note"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>{{t:home.sheetNote}}</p>
+      <ol class="journey" aria-label="{{t:home.stepsTitle}}">
+        <li><span>1</span>{{t:home.journey1}}</li>
+        <li><span>2</span>{{t:home.journey2}}</li>
+        <li><span>3</span>{{t:home.journey3}}</li>
+        <li><span>4</span>{{t:home.journey4}}</li>
+      </ol>
     </aside>
   </div>
 </section>
@@ -60,36 +57,13 @@
   </div>
 </section>
 
-<section class="section section--band" aria-labelledby="home-values">
+<section class="section section--tight" data-section="banners" hidden aria-label="{{t:home.promoTitle}}">
   <div class="container">
-    <p class="eyebrow">{{t:home.valueEyebrow}}</p>
-    <h2 class="visually-hidden" id="home-values">{{t:home.valueTitle}}</h2>
-    <ul class="value-grid">
-      <li class="value-card">
-        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg></span>
-        <h3 class="value-card__title">{{t:home.valueBulkTitle}}</h3>
-        <p>{{t:home.valueBulkText}}</p>
-      </li>
-      <li class="value-card">
-        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg></span>
-        <h3 class="value-card__title">{{t:home.valueVerifiedTitle}}</h3>
-        <p>{{t:home.valueVerifiedText}}</p>
-      </li>
-      <li class="value-card">
-        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-truck"></use></svg></span>
-        <h3 class="value-card__title">{{t:home.valueDeliveryTitle}}</h3>
-        <p>{{t:home.valueDeliveryText}}</p>
-      </li>
-      <li class="value-card">
-        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg></span>
-        <h3 class="value-card__title">{{t:home.valueQuoteTitle}}</h3>
-        <p>{{t:home.valueQuoteText}}</p>
-      </li>
-    </ul>
+    <div class="promo-grid" data-home-banners></div>
   </div>
 </section>
 
-<section class="section" aria-labelledby="home-featured">
+<section class="section" data-section="featured" aria-labelledby="home-featured">
   <div class="container">
     <div class="section-head">
       <div>
@@ -99,7 +73,7 @@
       </div>
       <a class="btn btn-ghost" href="/catalog?featured=true">{{t:common.viewAll}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
     </div>
-    <div class="product-grid" data-home-featured aria-busy="true"></div>
+    <div class="product-grid" data-home-list="featured" aria-busy="true"></div>
   </div>
 </section>
 
@@ -107,37 +81,140 @@
   <div class="container">
     <p class="eyebrow">{{t:home.stepsEyebrow}}</p>
     <h2 class="section-title display" id="home-steps">{{t:home.stepsTitle}}</h2>
-    <ol class="steps">
+    <ol class="steps steps--4">
       <li class="step">
         <span class="step__num">01</span>
+        <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg></span>
         <h3 class="step__title">{{t:home.step1Title}}</h3>
         <p>{{t:home.step1Text}}</p>
       </li>
       <li class="step">
         <span class="step__num">02</span>
+        <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg></span>
         <h3 class="step__title">{{t:home.step2Title}}</h3>
         <p>{{t:home.step2Text}}</p>
       </li>
       <li class="step">
         <span class="step__num">03</span>
+        <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg></span>
         <h3 class="step__title">{{t:home.step3Title}}</h3>
         <p>{{t:home.step3Text}}</p>
+      </li>
+      <li class="step">
+        <span class="step__num">04</span>
+        <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg></span>
+        <h3 class="step__title">{{t:home.step4Title}}</h3>
+        <p>{{t:home.step4Text}}</p>
       </li>
     </ol>
   </div>
 </section>
 
-<section class="section" aria-labelledby="home-suppliers">
+<section class="section" data-section="discounts" aria-labelledby="home-discounts">
   <div class="container">
     <div class="section-head">
       <div>
-        <p class="eyebrow">{{t:home.suppliersEyebrow}}</p>
-        <h2 class="section-title display" id="home-suppliers">{{t:home.suppliersTitle}}</h2>
-        <p class="section-lead">{{t:home.suppliersLead}}</p>
+        <p class="eyebrow eyebrow--sale">{{t:home.discountsEyebrow}}</p>
+        <h2 class="section-title display" id="home-discounts">{{t:home.discountsTitle}}</h2>
+        <p class="section-lead">{{t:home.discountsLead}}</p>
       </div>
-      <a class="btn btn-ghost" href="/suppliers">{{t:common.viewAll}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+      <a class="btn btn-ghost" href="/catalog?discount=true&amp;sort=discount">{{t:common.viewAll}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
     </div>
-    <div class="supplier-grid" data-home-suppliers aria-busy="true"></div>
+    <div class="product-grid product-grid--rail" data-home-list="discounted" aria-busy="true"></div>
+  </div>
+</section>
+
+<section class="section section--band" data-section="shops" aria-labelledby="home-shops">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">{{t:home.shopsEyebrow}}</p>
+        <h2 class="section-title display" id="home-shops">{{t:home.shopsTitle}}</h2>
+        <p class="section-lead">{{t:home.shopsLead}}</p>
+      </div>
+      <a class="btn btn-ghost" href="/shops">{{t:home.allShops}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </div>
+    <div class="shop-grid" data-home-shops aria-busy="true"></div>
+  </div>
+</section>
+
+<section class="section" data-section="newest" aria-labelledby="home-new">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">{{t:home.newEyebrow}}</p>
+        <h2 class="section-title display" id="home-new">{{t:home.newTitle}}</h2>
+        <p class="section-lead">{{t:home.newLead}}</p>
+      </div>
+      <a class="btn btn-ghost" href="/catalog?sort=newest">{{t:common.viewAll}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </div>
+    <div class="product-grid product-grid--rail" data-home-list="newest" aria-busy="true"></div>
+  </div>
+</section>
+
+<section class="section section--tight" data-section="popular" aria-labelledby="home-popular">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">{{t:home.popularEyebrow}}</p>
+        <h2 class="section-title display" id="home-popular">{{t:home.popularTitle}}</h2>
+      </div>
+      <a class="btn btn-ghost" href="/catalog?sort=popular">{{t:common.viewAll}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </div>
+    <div class="product-grid product-grid--rail" data-home-list="popular" aria-busy="true"></div>
+  </div>
+</section>
+
+<section class="section section--tight" data-section="brands" aria-labelledby="home-brands">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">{{t:home.brandsEyebrow}}</p>
+        <h2 class="section-title display" id="home-brands">{{t:home.brandsTitle}}</h2>
+      </div>
+    </div>
+    <div class="brand-row" data-home-brands></div>
+  </div>
+</section>
+
+<section class="section section--band" aria-labelledby="home-values">
+  <div class="container">
+    <p class="eyebrow">{{t:home.valueEyebrow}}</p>
+    <h2 class="section-title display" id="home-values">{{t:home.valueTitle}}</h2>
+    <ul class="value-grid">
+      <li class="value-card">
+        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg></span>
+        <h3 class="value-card__title">{{t:home.value1Title}}</h3>
+        <p>{{t:home.value1Text}}</p>
+      </li>
+      <li class="value-card">
+        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg></span>
+        <h3 class="value-card__title">{{t:home.value2Title}}</h3>
+        <p>{{t:home.value2Text}}</p>
+      </li>
+      <li class="value-card">
+        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg></span>
+        <h3 class="value-card__title">{{t:home.value3Title}}</h3>
+        <p>{{t:home.value3Text}}</p>
+      </li>
+      <li class="value-card">
+        <span class="value-card__icon"><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg></span>
+        <h3 class="value-card__title">{{t:home.value4Title}}</h3>
+        <p>{{t:home.value4Text}}</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="section section--tight" data-section="recent" data-recent-section hidden aria-labelledby="home-recent">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title display" id="home-recent">{{t:recent.title}}</h2>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" data-recent-clear>{{t:recent.clear}}</button>
+    </div>
+    <div class="product-grid product-grid--rail" data-recent></div>
   </div>
 </section>
 
@@ -148,7 +225,7 @@
         <h2 class="cta-band__title display">{{t:home.ctaTitle}}</h2>
         <p>{{t:home.ctaText}}</p>
       </div>
-      <a class="btn btn-dark btn-lg" href="/quote">{{t:home.ctaButton}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+      <a class="btn btn-dark btn-lg" href="/sell">{{t:home.ctaButton}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
     </div>
   </div>
 </section>

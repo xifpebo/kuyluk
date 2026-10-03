@@ -1,0 +1,44 @@
+<div class="shop-page" data-shop-root>
+  <div class="container shop-crumbs">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+        <ol>
+          <li><a href="/">{{t:common.home}}</a></li>
+          <li><a href="/shops">{{t:shops.title}}</a></li>
+          <li aria-current="page" data-crumb-current></li>
+        </ol>
+      </nav>
+  </div>
+  <div class="shop-hero" data-shop-hero aria-busy="true">
+    <div class="shop-hero__cover" data-shop-cover></div>
+    <div class="container">
+
+      <div class="shop-hero__card" data-shop-card>
+        <div class="skeleton skeleton-line skeleton-line--lg"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container shop-layout">
+    <section class="shop-layout__main" aria-labelledby="shop-products-title">
+      <div class="section-head section-head--compact">
+        <h2 class="section-title display" id="shop-products-title">{{t:shops.productsTitle}}</h2>
+        <label class="select-inline">
+          <span class="select-inline__label">{{t:catalog.sort}}</span>
+          <select class="control control--compact" data-shop-sort>
+            <option value="recommended">{{t:catalog.sortOptions.recommended}}</option>
+            <option value="popular">{{t:catalog.sortOptions.popular}}</option>
+            <option value="newest">{{t:catalog.sortOptions.newest}}</option>
+            <option value="price_asc">{{t:catalog.sortOptions.price_asc}}</option>
+            <option value="price_desc">{{t:catalog.sortOptions.price_desc}}</option>
+            <option value="discount">{{t:catalog.sortOptions.discount}}</option>
+          </select>
+        </label>
+      </div>
+      <div class="chips" data-shop-cats></div>
+      <div class="product-grid" data-shop-products aria-busy="true"></div>
+    </section>
+    <aside class="shop-layout__side" data-shop-side></aside>
+  </div>
+</div>
+<div class="buy-bar" data-buy-bar hidden></div>

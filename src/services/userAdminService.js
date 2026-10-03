@@ -6,7 +6,7 @@
  * invalidates the target's sessions via tokenVersion.
  */
 const mongoose = require('mongoose');
-const { User, Session } = require('../models');
+const { User, Session, Shop } = require('../models');
 const { recordAudit, diff } = require('./audit');
 const { createUser } = require('./authService');
 const { hashPassword, generateTemporaryPassword } = require('../security/password');
@@ -171,6 +171,8 @@ async function remove(req, id) {
   if (user.role === 'superadmin' && user.isActive && (await activeSuperadminCount(user._id)) === 0) {
     throw conflict('last_superadmin');
   }
+  const ownedShop = await Shop.findOne({ owner: user._id }).select('name').lean();
+  if (ownedShop) throw conflict('owns_shop', { params: { shop: ownedShop.name } });
   await Session.deleteMany({ user: user._id });
   await User.deleteOne({ _id: user._id });
   await recordAudit(req, {
@@ -180,13 +182,4 @@ async function remove(req, id) {
   });
 }
 
-/** Staff list for quote assignment. */
-async function staffOptions() {
-  const users = await User.find({ role: trusted({ $in: ['superadmin', 'manager'] }), isActive: true })
-    .select('name email role')
-    .sort({ name: 1 })
-    .lean();
-  return users.map((u) => ({ id: String(u._id), name: u.name, email: u.email, role: u.role }));
-}
-
-module.exports = { listUsers, create, update, resetPassword, unlock, revokeSessions, remove, staffOptions };
+module.exports = { listUsers, create, update, resetPassword, unlock, revokeSessions, remove };

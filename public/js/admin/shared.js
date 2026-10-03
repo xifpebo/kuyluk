@@ -15,15 +15,15 @@ import { showErrors } from '../lib/forms.js';
 export const LANGS = ['uz', 'ru'];
 
 export const STOCK_TONES = { in_stock: 'ok', low_stock: 'warn', on_order: 'info', out_of_stock: 'danger' };
-export const QUOTE_TONES = {
-  new: 'info',
-  in_progress: 'warn',
-  quoted: 'accent',
-  accepted: 'ok',
-  rejected: 'danger',
-  cancelled: 'muted'
-};
-export const ROLE_TONES = { superadmin: 'hazard', manager: 'info', user: 'muted' };
+export const STATUS_TONES = { draft: 'muted', pending: 'warn', approved: 'ok', rejected: 'danger', suspended: 'danger' };
+export const ROLE_TONES = { superadmin: 'hazard', manager: 'info', shop_owner: 'accent', user: 'muted' };
+
+/** 'admin' (staff panel) or 'seller' (shop-owner cabinet); set once by app.js. */
+export const appContext = { mode: 'admin' };
+
+export function apiBase() {
+  return appContext.mode === 'seller' ? '/api/seller' : '/api/admin';
+}
 
 /* ------------------------------------------------------------ caches */
 let metaPromise = null;
@@ -40,10 +40,10 @@ export function getMeta() {
   return metaPromise;
 }
 
-/** Categories, brands, suppliers and staff for form selects. */
+/** Categories, brands and shops for form selects. */
 export function getOptions({ force = false } = {}) {
   if (force || !optionsPromise) {
-    optionsPromise = api('/api/admin/options').catch((error) => {
+    optionsPromise = api(`${apiBase()}/options`).catch((error) => {
       optionsPromise = null;
       throw error;
     });
@@ -123,8 +123,8 @@ export function stockBadge(status) {
   return badge(t(`stock.${status}`), STOCK_TONES[status] || 'muted', { dot: true });
 }
 
-export function quoteBadge(status) {
-  return badge(t(`quoteStatus.${status}`), QUOTE_TONES[status] || 'muted', { dot: status !== 'quoted' });
+export function statusBadge(status, kind = 'product') {
+  return badge(t(`admin.status.${kind}.${status}`), STATUS_TONES[status] || 'muted', { dot: true });
 }
 
 export function roleBadge(role) {
@@ -728,4 +728,72 @@ export function deviceLabel(userAgent = '') {
     (/Linux/.test(ua) && 'Linux') ||
     '';
   return [browser, os].filter(Boolean).join(' · ') || t('admin.common.none');
+}
+
+/* ------------------------------------------------------- single image */
+/** Uploads one image through /api/uploads after client-side checks. */
+export async function uploadFile(file, meta) {
+  const maxBytes = meta?.uploads?.maxBytes || 5 * 1024 * 1024;
+  const types = meta?.uploads?.types || ['image/jpeg', 'image/png', 'image/webp'];
+  if (!types.includes(file.type)) throw Object.assign(new Error(t('errors.invalid_image', { max: Math.round(maxBytes / 1048576) })), { code: 'invalid_image' });
+  if (file.size > maxBytes) throw Object.assign(new Error(t('errors.payload_too_large')), { code: 'payload_too_large' });
+  const result = await api('/api/uploads', { method: 'POST', body: file });
+  return result.url;
+}
+
+/**
+ * URL input with a preview and an upload button. Wire it up with
+ * `bindImageFields(container, meta)` once the markup is in the DOM.
+ */
+export function imageField({ name, label, value = '', hint = '', wide = false, canUpload = true }) {
+  const id = uniqueId('img');
+  return html`<div class="field image-field ${wide ? 'image-field--wide' : ''}" data-image-field>
+    ${labelFor(id, label, { optional: true })}
+    <div class="image-field__row">
+      <span class="image-field__preview" data-image-preview>${value ? html`<img src="${value}" alt="">` : icon('image')}</span>
+      <div class="image-field__controls">
+        <input class="control" id="${id}" name="${name}" type="text" inputmode="url" value="${value || ''}" maxlength="1000" autocomplete="off" spellcheck="false" placeholder="https://… / /uploads/…">
+        ${canUpload
+          ? html`<label class="btn btn-ghost btn-sm image-field__upload">${icon('upload')}<span data-upload-label>${t('admin.products.upload')}</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" class="visually-hidden" data-image-upload data-ignore>
+            </label>`
+          : ''}
+      </div>
+    </div>
+    ${hint ? html`<p class="field__hint">${hint}</p>` : ''}
+  </div>`;
+}
+
+export function bindImageFields(container, meta) {
+  for (const field of $$('[data-image-field]', container)) {
+    const input = field.querySelector('input[name]');
+    const preview = field.querySelector('[data-image-preview]');
+    const refresh = () => {
+      const url = input.value.trim();
+      if (url && /^(https:\/\/|\/)/.test(url)) setHTML(preview, html`<img src="${url}" alt="">`);
+      else setHTML(preview, icon('image'));
+    };
+    input.addEventListener('change', refresh);
+    const upload = field.querySelector('[data-image-upload]');
+    if (!upload) continue;
+    upload.addEventListener('change', async () => {
+      const file = upload.files?.[0];
+      upload.value = '';
+      if (!file) return;
+      const label = field.querySelector('[data-upload-label]');
+      field.classList.add('is-busy');
+      label.textContent = t('admin.products.uploading');
+      try {
+        input.value = await uploadFile(file, meta);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        refresh();
+        toast(t('admin.products.uploaded'), { type: 'ok' });
+      } catch (error) {
+        reportError(error);
+      } finally {
+        field.classList.remove('is-busy');
+        label.textContent = t('admin.products.upload');
+      }
+    });
+  }
 }

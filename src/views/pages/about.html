@@ -1,0 +1,78 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li aria-current="page">{{t:about.title}}</li>
+      </ol>
+    </nav>
+    <p class="eyebrow">{{t:about.eyebrow}}</p>
+    <h1 class="page-title display">{{t:about.title}}</h1>
+    <p class="page-lead page-lead--wide">{{t:about.lead}}</p>
+  </div>
+</div>
+
+<div class="container section section--tight about">
+  <div class="about__grid">
+    <section class="content-block">
+      <h2 class="content-block__title">{{t:about.missionTitle}}</h2>
+      <div class="prose">
+        <p>{{t:about.missionText1}}</p>
+        <p>{{t:about.missionText2}}</p>
+      </div>
+    </section>
+    <aside class="spec-sheet about__sheet">
+      <div class="spec-sheet__tape" aria-hidden="true"></div>
+      <p class="spec-sheet__title">{{t:about.notShopTitle}}</p>
+      <ul class="check-list">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.notShop1}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.notShop2}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.notShop3}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.notShop4}}</li>
+      </ul>
+    </aside>
+  </div>
+
+  <ol class="steps steps--4 about__steps">
+    <li class="step"><span class="step__num">01</span><h3 class="step__title">{{t:home.step1Title}}</h3><p>{{t:home.step1Text}}</p></li>
+    <li class="step"><span class="step__num">02</span><h3 class="step__title">{{t:home.step2Title}}</h3><p>{{t:home.step2Text}}</p></li>
+    <li class="step"><span class="step__num">03</span><h3 class="step__title">{{t:home.step3Title}}</h3><p>{{t:home.step3Text}}</p></li>
+    <li class="step"><span class="step__num">04</span><h3 class="step__title">{{t:home.step4Title}}</h3><p>{{t:home.step4Text}}</p></li>
+  </ol>
+
+  <div class="about__grid about__grid--even">
+    <section class="content-block">
+      <h2 class="content-block__title">{{t:about.buyersTitle}}</h2>
+      <ul class="check-list">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.buyers1}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.buyers2}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.buyers3}}</li>
+      </ul>
+      <a class="btn btn-accent" href="/catalog">{{t:nav.catalog}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </section>
+    <section class="content-block">
+      <h2 class="content-block__title">{{t:about.sellersTitle}}</h2>
+      <ul class="check-list">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.sellers1}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.sellers2}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>{{t:about.sellers3}}</li>
+      </ul>
+      <a class="btn btn-ghost" href="/sell">{{t:nav.sell}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </section>
+  </div>
+
+  <section class="owner-card">
+    <div class="owner-card__avatar" aria-hidden="true">AB</div>
+    <div class="owner-card__body">
+      <p class="eyebrow">{{t:about.ownerEyebrow}}</p>
+      <h2 class="owner-card__name">{{v:contact.ownerName}}</h2>
+      <p>{{t:about.ownerText}}</p>
+      <div class="owner-card__links">
+        <a class="btn btn-accent" href="{{v:contact.phoneHref}}"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg>{{v:contact.phone}}</a>
+        {{#if contact.telegram}}<a class="btn btn-ghost" href="{{v:contact.telegramHref}}" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-telegram"></use></svg>@{{v:contact.telegram}}</a>{{/if}}
+        {{#if contact.instagram}}<a class="btn btn-ghost" href="{{v:contact.instagramHref}}" target="_blank" rel="noopener noreferrer"><svg class="icon" aria-hidden="true"><use href="#i-instagram"></use></svg>@{{v:contact.instagram}}</a>{{/if}}
+      </div>
+    </div>
+  </section>
+  <p class="muted small about__demo">{{t:about.demoNote}}</p>
+</div>

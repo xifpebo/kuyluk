@@ -18,10 +18,6 @@
           <input class="control" id="reg-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="25" placeholder="+998 __ ___ __ __">
         </div>
         <div class="field">
-          <label class="field__label" for="reg-company">{{t:auth.company}} <span class="field__optional">({{t:common.optional}})</span></label>
-          <input class="control" id="reg-company" name="company" type="text" autocomplete="organization" maxlength="120">
-        </div>
-        <div class="field">
           <label class="field__label" for="reg-password">{{t:auth.password}}</label>
           <div class="password-input">
             <input class="control" id="reg-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-password-policy aria-describedby="reg-password-meter">
@@ -47,5 +43,6 @@
       <button class="btn btn-accent btn-lg btn-block" type="submit">{{t:auth.registerButton}}</button>
     </form>
     <p class="auth-card__alt">{{t:auth.haveAccount}} <a href="/login">{{t:nav.login}}</a></p>
+    <p class="auth-card__alt">{{t:auth.sellerQuestion}} <a href="/sell">{{t:nav.sell}}</a></p>
   </section>
 </div>

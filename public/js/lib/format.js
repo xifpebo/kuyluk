@@ -1,150 +1,66 @@
 /**
- * Construction-specific formatting and pricing helpers (mirror of the
- * server's pricing rules — the server remains authoritative).
+ * Catalog formatting helpers shared by the storefront pages.
  */
-import { t, fmtNumber, fmtMoney, unitShort, loc } from './i18n.js';
-
-const EPSILON = 1e-9;
-
-export function unitPriceFor(product, qty) {
-  let price = product.price;
-  for (const tier of product.priceTiers || []) {
-    if (qty + EPSILON >= tier.minQty && tier.price < price) price = tier.price;
-  }
-  return price;
-}
-
-export function lineTotal(product, qty) {
-  return Math.round(unitPriceFor(product, qty) * qty);
-}
-
-export function minQty(product) {
-  return product.minOrderQty || 1;
-}
-
-export function stepOf(product) {
-  return product.orderStep || 1;
-}
-
-const decimals = (value) => {
-  const text = String(value);
-  return text.includes('.') ? text.split('.')[1].length : 0;
-};
-
-/** Snap a quantity to the product's step and minimum. */
-export function normalizeQty(product, qty) {
-  const step = stepOf(product);
-  const min = minQty(product);
-  if (!Number.isFinite(qty) || qty <= 0) return min;
-  const places = Math.max(decimals(step), decimals(min), 0);
-  let snapped = Math.round(qty / step) * step;
-  if (snapped + EPSILON < min) snapped = Math.ceil(min / step) * step;
-  return Number(snapped.toFixed(Math.min(places, 3)));
-}
-
-export function checkQty(product, qty) {
-  const min = minQty(product);
-  const step = stepOf(product);
-  if (!Number.isFinite(qty) || qty <= 0) return t('validation.qty_invalid');
-  if (qty + EPSILON < min) return t('validation.qty_below_min', { min: fmtNumber(min) });
-  const steps = qty / step;
-  if (Math.abs(steps - Math.round(steps)) > 1e-6) return t('validation.qty_step', { step: fmtNumber(step) });
-  if (qty > 1e6) return t('validation.qty_too_large');
-  return null;
-}
-
-export function qtyLabel(product, qty) {
-  return `${fmtNumber(qty)} ${unitShort(product.unit)}`;
-}
+import { t, fmtMoney, unitShort, loc, fmtNumber } from './i18n.js';
+import { html, icon } from './dom.js';
 
 export function stockInfo(status) {
-  const map = {
-    in_stock: 'ok',
-    low_stock: 'warn',
-    on_order: 'info',
-    out_of_stock: 'danger'
-  };
+  const map = { in_stock: 'ok', low_stock: 'warn', on_order: 'info', out_of_stock: 'danger' };
   return { tone: map[status] || 'muted', label: t(`stock.${status}`) };
-}
-
-function mm(value) {
-  return fmtNumber(value);
-}
-
-/** Human dimension summary, e.g. "2500×1200×12,5 mm" or "Ø20×3,4 mm". */
-export function dimensionSummary(dimensions = {}) {
-  const { lengthMm: l, widthMm: w, heightMm: h, thicknessMm: th, diameterMm: d } = dimensions;
-  const unit = t('common.mm');
-  if (d) {
-    const parts = [`Ø${mm(d)}`];
-    if (th) parts.push(mm(th));
-    const out = `${parts.join('×')} ${unit}`;
-    return l && l >= 1000 ? `${out} · ${fmtNumber(l / 1000)} m` : out;
-  }
-  const parts = [l, w, h, th].filter((v) => typeof v === 'number' && v > 0).map(mm);
-  return parts.length ? `${parts.join('×')} ${unit}` : '';
-}
-
-export function weightLabel(kg) {
-  if (!kg) return '';
-  if (kg >= 1000) return `${fmtNumber(kg / 1000)} ${t('common.tonShort')}`;
-  return `${fmtNumber(kg)} ${t('common.kg')}`;
-}
-
-/** Short spec chips for cards. */
-export function keyChips(product) {
-  const chips = [];
-  if (product.grade) chips.push(product.grade);
-  const dims = dimensionSummary(product.dimensions);
-  if (dims) chips.push(dims);
-  if (product.weightKg && !['m3', 'ton'].includes(product.unit)) chips.push(weightLabel(product.weightKg));
-  return chips.slice(0, 3);
-}
-
-/** The best (largest) tier, used for "from N: price" hints. */
-export function bestTier(product) {
-  const tiers = product.priceTiers || [];
-  return tiers.length ? tiers[tiers.length - 1] : null;
-}
-
-export function tierHint(product) {
-  const tier = bestTier(product);
-  if (!tier) return '';
-  return `${t('product.tierOpen', { from: fmtNumber(tier.minQty), unit: unitShort(product.unit) })}: ${fmtMoney(tier.price)}`;
-}
-
-/** Rows for the tier table: [{ from, to, price, saving }]. */
-export function tierRows(product) {
-  const tiers = product.priceTiers || [];
-  const rows = [];
-  const first = { from: minQty(product), price: product.price };
-  const all = [first, ...tiers.map((tier) => ({ from: tier.minQty, price: tier.price }))];
-  all.forEach((row, index) => {
-    const next = all[index + 1];
-    rows.push({
-      from: row.from,
-      to: next ? next.from - stepOf(product) : null,
-      price: row.price,
-      saving: product.price > 0 ? Math.round((1 - row.price / product.price) * 100) : 0
-    });
-  });
-  return rows;
-}
-
-export function productName(product) {
-  return loc(product.name);
 }
 
 export function productUrl(product) {
   return `/product/${encodeURIComponent(product.slug)}`;
 }
 
-export function supplierUrl(supplier) {
-  return `/supplier/${encodeURIComponent(supplier.slug)}`;
+export function shopUrl(shop) {
+  return `/shop/${encodeURIComponent(shop.slug)}`;
 }
 
 export function categoryUrl(category) {
   return `/catalog?category=${encodeURIComponent(category.slug)}`;
 }
 
-export const PLACEHOLDER_IMAGE = '/img/catalog/placeholder.svg';
+export function priceLabel(product) {
+  const unit = product.unit && product.unit !== 'piece' ? ` / ${unitShort(product.unit)}` : '';
+  return `${fmtMoney(product.price)}${unit}`;
+}
+
+export function colorName(key) {
+  return t(`colors.${key}`);
+}
+
+export function swatch(key) {
+  return html`<span class="swatch swatch--${key}" title="${colorName(key)}"></span>`;
+}
+
+/** Shop accent colours are applied through the CSSOM (inline style attributes are blocked by the CSP). */
+export function applyAccents(root = document) {
+  root.querySelectorAll('[data-accent]').forEach((element) => {
+    const value = element.dataset.accent;
+    if (/^#[0-9a-f]{6}$/i.test(value)) element.style.setProperty('--shop-accent', value);
+  });
+}
+
+/** Five-star rating (display only). */
+export function stars(rating = 0, { count = null, compact = false } = {}) {
+  const value = Math.round((Number(rating) || 0) * 2) / 2;
+  const full = Math.floor(value);
+  const half = value - full >= 0.5;
+  const items = [];
+  for (let i = 0; i < 5; i += 1) {
+    const kind = i < full ? 'full' : i === full && half ? 'half' : 'empty';
+    items.push(html`<span class="stars__star stars__star--${kind}">${icon('star-fill')}</span>`);
+  }
+  const label = count !== null ? t('reviews.ratingAria', { rating: fmtNumber(value), count }) : t('reviews.ratingOnly', { rating: fmtNumber(value) });
+  return html`<span class="stars ${compact ? 'stars--compact' : ''}" role="img" aria-label="${label}">
+    <span class="stars__row" aria-hidden="true">${items}</span>
+    ${count !== null ? html`<span class="stars__text" aria-hidden="true">${value ? fmtNumber(value) : '—'}${count ? html` <span class="stars__count">(${count})</span>` : ''}</span>` : ''}
+  </span>`;
+}
+
+export function productName(product) {
+  return loc(product.name);
+}
+
+export const PLACEHOLDER_IMAGE = '/img/placeholder.svg';

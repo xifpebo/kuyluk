@@ -3,7 +3,7 @@
     <div class="admin-sidebar__brand">
       <a class="brand" href="/admin#/dashboard">
         <svg class="brand__mark" aria-hidden="true"><use href="#i-logo"></use></svg>
-        <span class="brand__text"><span class="brand__top">Big Bazaar</span><span class="brand__bottom">Build</span></span>
+        <span class="brand__text"><span class="brand__name">Stroy<span class="brand__name-accent">Bazar</span></span></span>
       </a>
       <span class="admin-sidebar__tag">{{t:admin.brand}}</span>
       <button class="btn btn-icon btn-ghost admin-sidebar__close" type="button" data-sidebar-close>
@@ -15,6 +15,10 @@
       <a class="admin-nav__link" href="#/dashboard" data-route="dashboard" data-permission="dashboard:view">
         <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>{{t:admin.nav.dashboard}}
       </a>
+      <a class="admin-nav__link" href="#/approvals" data-route="approvals" data-permission-any="products:approve shops:approve reviews:moderate">
+        <svg class="icon" aria-hidden="true"><use href="#i-check-circle"></use></svg>{{t:admin.nav.approvals}}
+        <span class="admin-nav__badge" data-pending-badge hidden></span>
+      </a>
       <p class="admin-nav__group" data-permission="products:read">{{t:admin.nav.catalogGroup}}</p>
       <a class="admin-nav__link" href="#/products" data-route="products" data-permission="products:read">
         <svg class="icon" aria-hidden="true"><use href="#i-package"></use></svg>{{t:admin.nav.products}}
@@ -25,13 +29,22 @@
       <a class="admin-nav__link" href="#/brands" data-route="brands" data-permission="products:read">
         <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>{{t:admin.nav.brands}}
       </a>
-      <a class="admin-nav__link" href="#/suppliers" data-route="suppliers" data-permission="products:read">
-        <svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg>{{t:admin.nav.suppliers}}
+      <p class="admin-nav__group" data-permission-any="products:read reviews:moderate">{{t:admin.nav.marketGroup}}</p>
+      <a class="admin-nav__link" href="#/shops" data-route="shops" data-permission="products:read">
+        <svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg>{{t:admin.nav.shops}}
       </a>
-      <p class="admin-nav__group" data-permission="quotes:read">{{t:admin.nav.salesGroup}}</p>
-      <a class="admin-nav__link" href="#/quotes" data-route="quotes" data-permission="quotes:read">
-        <svg class="icon" aria-hidden="true"><use href="#i-clipboard"></use></svg>{{t:admin.nav.quotes}}
-        <span class="admin-nav__badge" data-new-quotes hidden></span>
+      <a class="admin-nav__link" href="#/reviews" data-route="reviews" data-permission="reviews:moderate">
+        <svg class="icon" aria-hidden="true"><use href="#i-chat"></use></svg>{{t:admin.nav.reviews}}
+      </a>
+      <p class="admin-nav__group" data-permission-any="content:write translations:write">{{t:admin.nav.contentGroup}}</p>
+      <a class="admin-nav__link" href="#/content" data-route="content" data-permission="content:write">
+        <svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>{{t:admin.nav.content}}
+      </a>
+      <a class="admin-nav__link" href="#/banners" data-route="banners" data-permission="content:write">
+        <svg class="icon" aria-hidden="true"><use href="#i-megaphone"></use></svg>{{t:admin.nav.banners}}
+      </a>
+      <a class="admin-nav__link" href="#/translations" data-route="translations" data-permission="translations:write">
+        <svg class="icon" aria-hidden="true"><use href="#i-globe"></use></svg>{{t:admin.nav.translations}}
       </a>
       <p class="admin-nav__group" data-permission-any="users:manage audit:read">{{t:admin.nav.systemGroup}}</p>
       <a class="admin-nav__link" href="#/users" data-route="users" data-permission="users:manage">

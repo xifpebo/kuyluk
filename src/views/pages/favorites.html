@@ -1,0 +1,32 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li aria-current="page">{{t:favorites.title}}</li>
+      </ol>
+    </nav>
+    <div class="account-head">
+      <div>
+        <h1 class="page-title display">{{t:favorites.title}}</h1>
+        <p class="page-lead">{{t:favorites.lead}}</p>
+      </div>
+      <button class="btn btn-ghost" type="button" data-fav-clear hidden><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>{{t:favorites.clear}}</button>
+    </div>
+  </div>
+</div>
+
+<div class="container section section--tight">
+  <p class="notice notice--info" data-fav-login hidden><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg><span>{{t:favorites.loginHint}}</span> <a href="/login?next=%2Ffavorites">{{t:nav.login}}</a></p>
+  <div data-fav-groups aria-busy="true"></div>
+</div>
+
+<section class="section section--tight" data-recent-section hidden aria-labelledby="fav-recent">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title display" id="fav-recent">{{t:recent.title}}</h2>
+      <button class="btn btn-ghost btn-sm" type="button" data-recent-clear>{{t:recent.clear}}</button>
+    </div>
+    <div class="product-grid product-grid--rail" data-recent></div>
+  </div>
+</section>

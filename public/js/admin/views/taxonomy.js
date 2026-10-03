@@ -1,14 +1,18 @@
 /**
- * Generic list + slide-over editor for categories, brands and suppliers.
+ * Generic list + slide-over editor for categories (two levels: parent
+ * groups and the subcategories that hold products) and brands.
  */
-import { html, setHTML, icon, on, $, formatPhone } from '../../lib/dom.js';
+import { html, setHTML, icon, on, $, safeUrl } from '../../lib/dom.js';
 import { t, loc, fmtNumber } from '../../lib/i18n.js';
 import { api, can } from '../../lib/api.js';
 import { toast, confirmDialog, badge } from '../../lib/ui.js';
 import { formValues, validateForm, showErrors, clearErrors, liveValidation } from '../../lib/forms.js';
 import {
   getMeta,
+  getOptions,
   invalidateOptions,
+  imageField,
+  bindImageFields,
   viewHead,
   activeBadge,
   dataTable,
@@ -22,7 +26,6 @@ import {
   selectField,
   switchField,
   locField,
-  checkbox,
   validateNumbers,
   normalizeNumberInputs,
   reportError,
@@ -32,8 +35,6 @@ import {
   attrs
 } from '../shared.js';
 
-const STALL_PATTERN = '[A-Za-z0-9][A-Za-z0-9\\-]{0,11}';
-const HOURS_PATTERN = '\\d{2}:\\d{2}\\s?[\\u2013\\-]\\s?\\d{2}:\\d{2}';
 const SLUG_PATTERN = '[a-z0-9]+(?:-[a-z0-9]+)*';
 
 function slugField(item) {
@@ -50,7 +51,8 @@ function slugField(item) {
 function productCount(item, type) {
   const count = item.productCount || 0;
   if (!count) return html`<span class="muted">0</span>`;
-  const param = type === 'categories' ? 'category' : type === 'suppliers' ? 'supplier' : null;
+  if (type === 'categories' && !item.parent) return html`<span class="mono">${fmtNumber(count)}</span>`;
+  const param = type === 'categories' ? 'category' : null;
   return param
     ? html`<a class="row-link mono" href="#/products?${param}=${item.id}">${fmtNumber(count)}</a>`
     : html`<span class="mono">${fmtNumber(count)}</span>`;
@@ -67,15 +69,24 @@ const CONFIG = {
     deletePermission: 'taxonomy:delete',
     entity: 'category',
     label: (item) => loc(item.name),
+    viewUrl: (item) => (item.isActive ? `/catalog?category=${item.slug}` : null),
+    /** Parents first, each followed by its subcategories. */
+    arrange: (list) => {
+      const roots = list.filter((c) => !c.parent || !list.some((p) => p.id === c.parent));
+      return roots.flatMap((root) => [root, ...list.filter((c) => c.parent === root.id)]);
+    },
     columns: (type) => [
       {
         label: t('admin.categories.name'),
         primary: true,
-        render: (item) => html`<div class="cell-main">
-          <span class="icon-box">${icon(item.icon || 'box')}</span>
+        render: (item) => html`<div class="cell-main ${item.parent ? 'cell-main--child' : ''}">
+          ${item.image
+            ? html`<img class="thumb thumb--square" src="${safeUrl(item.image)}" alt="" width="44" height="44" loading="lazy">`
+            : html`<span class="icon-box">${icon(item.icon || 'box')}</span>`}
           <span class="cell-main__text">
             <button class="row-link btn-reset" type="button" data-edit="${item.id}">${loc(item.name)}</button>
             <span class="cell-sub">UZ: ${item.name.uz} · RU: ${item.name.ru}</span>
+            <span class="cell-tags">${item.parent ? badge(t('admin.categories.subcategory'), 'muted') : badge(t('admin.categories.group'), 'info')}</span>
           </span>
         </div>`
       },
@@ -84,8 +95,17 @@ const CONFIG = {
       { label: t('admin.categories.sortOrder'), className: 'num', render: (item) => html`<span class="mono">${item.sortOrder}</span>` },
       { label: t('admin.common.status'), render: (item) => activeBadge(item.isActive) }
     ],
-    form: (item, meta) => html`
+    form: (item, meta, options) => html`
       ${locField({ name: 'name', label: t('admin.categories.name'), value: item?.name, required: true, min: 2, max: 80 })}
+      ${selectField({
+        name: 'parent',
+        label: t('admin.categories.parent'),
+        options: options.parents.filter((p) => p.id !== item?.id).map((p) => ({ value: p.id, label: loc(p.name) })),
+        value: item?.parent || '',
+        placeholder: t('admin.categories.noParent'),
+        hint: t('admin.categories.parentHint')
+      })}
+      ${imageField({ name: 'image', label: t('admin.categories.image'), value: item?.image || '', hint: t('admin.categories.imageHint'), canUpload: can('uploads:write') })}
       ${locField({ name: 'description', label: t('admin.categories.description'), value: item?.description, multiline: true, rows: 3, max: 400 })}
       <fieldset class="plain">
         <legend class="field__label">${t('admin.categories.icon')}</legend>
@@ -107,6 +127,8 @@ const CONFIG = {
       slug: values.slug || undefined,
       name: values.name,
       description: values.description,
+      parent: values.parent || null,
+      image: values.image || '',
       icon: values.icon || 'box',
       sortOrder: values.sortOrder ?? 100,
       isActive: Boolean(values.isActive)
@@ -123,6 +145,7 @@ const CONFIG = {
     deletePermission: 'taxonomy:delete',
     entity: 'brand',
     label: (item) => item.name,
+    viewUrl: (item) => (item.isActive ? `/catalog?brand=${item.slug}` : null),
     columns: (type) => [
       {
         label: t('admin.brands.name'),
@@ -161,126 +184,6 @@ const CONFIG = {
       description: values.description,
       isActive: Boolean(values.isActive)
     })
-  },
-
-  suppliers: {
-    endpoint: '/api/admin/suppliers',
-    title: 'admin.suppliers.title',
-    lead: 'admin.suppliers.lead',
-    newLabel: 'admin.suppliers.new',
-    editLabel: 'admin.suppliers.edit',
-    writePermission: 'suppliers:write',
-    deletePermission: 'suppliers:delete',
-    entity: 'supplier',
-    label: (item) => `${item.stallNumber} · ${item.name}`,
-    viewUrl: (item) => (item.isActive ? `/supplier/${item.slug}` : null),
-    columns: (type) => [
-      {
-        label: t('admin.suppliers.name'),
-        primary: true,
-        render: (item) => html`<div class="cell-main">
-          <span class="stall">${item.stallNumber}</span>
-          <span class="cell-main__text">
-            <button class="row-link btn-reset" type="button" data-edit="${item.id}">${item.name}</button>
-            <span class="cell-tags">
-              ${item.isVerified ? badge(t('common.verified'), 'ok') : ''}
-              ${item.isFeatured ? badge(t('admin.products.featuredBadge'), 'hazard') : ''}
-              ${item.deliveryAvailable ? badge(t('suppliers.delivery'), 'info') : ''}
-            </span>
-          </span>
-        </div>`
-      },
-      {
-        label: t('admin.suppliers.contacts'),
-        render: (item) => html`${item.phone ? html`<a class="row-link mono small" href="tel:${item.phone}">${formatPhone(item.phone)}</a>` : html`<span class="muted">${t('admin.common.none')}</span>`}
-          ${item.telegram ? html`<br><span class="cell-sub">@${item.telegram}</span>` : ''}`
-      },
-      {
-        label: t('admin.suppliers.workingHours'),
-        render: (item) => html`<span class="mono small">${item.workingHours}</span><br><span class="cell-sub">${t(`suppliers.workingDays.${item.workingDays}`)}</span>`
-      },
-      { label: t('admin.suppliers.products'), className: 'num', render: (item) => productCount(item, type) },
-      { label: t('admin.common.status'), render: (item) => activeBadge(item.isActive) }
-    ],
-    form: (item, meta) => html`
-      <div class="grid-2">
-        ${inputField({ name: 'name', label: t('admin.suppliers.name'), value: item?.name, required: true, attributes: { minlength: 2, maxlength: 100 } })}
-        ${inputField({
-          name: 'stallNumber',
-          label: t('admin.suppliers.stallNumber'),
-          value: item?.stallNumber,
-          required: true,
-          hint: t('admin.suppliers.stallHint'),
-          attributes: { maxlength: 12, pattern: STALL_PATTERN, autocomplete: 'off' }
-        })}
-        ${inputField({ name: 'phone', label: t('admin.suppliers.phone'), value: item?.phone || '', type: 'tel', optional: true, hint: t('quote.phoneHint'), attributes: { maxlength: 25, inputmode: 'tel' } })}
-        ${inputField({ name: 'whatsapp', label: t('admin.suppliers.whatsapp'), value: item?.whatsapp || '', type: 'tel', optional: true, attributes: { maxlength: 25, inputmode: 'tel' } })}
-        ${inputField({
-          name: 'telegram',
-          label: t('admin.suppliers.telegram'),
-          value: item?.telegram || '',
-          optional: true,
-          hint: t('admin.suppliers.telegramHint'),
-          attributes: { maxlength: 40, pattern: '@?[A-Za-z][A-Za-z0-9_]{4,31}', 'data-pattern-code': 'invalid_telegram', autocomplete: 'off' }
-        })}
-        ${inputField({ name: 'email', label: t('admin.suppliers.email'), value: item?.email || '', type: 'email', optional: true, attributes: { maxlength: 254 } })}
-        ${inputField({
-          name: 'workingHours',
-          label: t('admin.suppliers.workingHours'),
-          value: item?.workingHours || '08:00–18:00',
-          required: true,
-          hint: t('admin.suppliers.hoursHint'),
-          attributes: { maxlength: 40, pattern: HOURS_PATTERN, 'data-pattern-code': 'invalid_hours' }
-        })}
-        ${selectField({
-          name: 'workingDays',
-          label: t('admin.suppliers.workingDays'),
-          options: meta.workingDays.map((value) => ({ value, label: t(`suppliers.workingDays.${value}`) })),
-          value: item?.workingDays || 'mon_sat'
-        })}
-      </div>
-      <fieldset class="plain">
-        <legend class="field__label">${t('admin.suppliers.paymentMethods')}</legend>
-        <div class="check-grid" data-error-for="paymentMethods">
-          ${meta.paymentMethods.map((value) =>
-            checkbox({ name: 'paymentMethods', value, label: t(`suppliers.paymentMethods.${value}`), multi: true, checked: (item?.paymentMethods || ['cash']).includes(value) })
-          )}
-        </div>
-      </fieldset>
-      ${locField({ name: 'address', label: t('admin.suppliers.address'), value: item?.address, max: 200 })}
-      ${locField({ name: 'description', label: t('admin.suppliers.description'), value: item?.description, multiline: true, rows: 3, max: 1000 })}
-      ${switchField({ name: 'deliveryAvailable', label: t('admin.suppliers.deliveryAvailable'), checked: Boolean(item?.deliveryAvailable) })}
-      ${locField({ name: 'deliveryNote', label: t('admin.suppliers.deliveryNote'), value: item?.deliveryNote, max: 300 })}
-      <div class="grid-2">
-        ${inputField({ name: 'logoUrl', label: t('admin.suppliers.logoUrl'), value: item?.logoUrl || '', optional: true, attributes: { maxlength: 1000, inputmode: 'url' } })}
-        ${slugField(item)}
-      </div>
-      <div class="stack">
-        ${switchField({ name: 'isVerified', label: t('admin.suppliers.isVerified'), checked: Boolean(item?.isVerified) })}
-        ${switchField({ name: 'isFeatured', label: t('admin.suppliers.isFeatured'), checked: Boolean(item?.isFeatured) })}
-        ${switchField({ name: 'isActive', label: t('admin.suppliers.isActive'), hint: t('admin.suppliers.isActiveHint'), checked: item ? item.isActive : true })}
-      </div>`,
-    collect: (values) => ({
-      slug: values.slug || undefined,
-      name: values.name,
-      stallNumber: (values.stallNumber || '').toUpperCase(),
-      description: values.description,
-      address: values.address,
-      phone: values.phone,
-      telegram: values.telegram,
-      whatsapp: values.whatsapp,
-      email: values.email,
-      workingHours: values.workingHours,
-      workingDays: values.workingDays,
-      deliveryAvailable: Boolean(values.deliveryAvailable),
-      deliveryNote: values.deliveryNote,
-      paymentMethods: values.paymentMethods || [],
-      isVerified: Boolean(values.isVerified),
-      isFeatured: Boolean(values.isFeatured),
-      isActive: Boolean(values.isActive),
-      logoUrl: values.logoUrl
-    }),
-    check: (values) => (values.paymentMethods.length ? {} : { paymentMethods: t('validation.required') })
   }
 };
 
@@ -289,7 +192,7 @@ export function taxonomyView(type) {
   const path = `/${type}`;
 
   return async function view({ root, query }) {
-    const meta = await getMeta();
+    const [meta, options] = await Promise.all([getMeta(), type === 'categories' ? getOptions({ force: true }) : Promise.resolve(null)]);
     const canWrite = can(config.writePermission);
     const canDelete = can(config.deletePermission);
 
@@ -323,9 +226,9 @@ export function taxonomyView(type) {
       root,
       path,
       endpoint: config.endpoint,
-      defaults: {},
+      defaults: type === 'categories' ? { limit: 200 } : {},
       render: (data) => {
-        items = data.items;
+        items = config.arrange ? config.arrange(data.items) : data.items;
         if (!items.length) {
           setHTML(results, messageBlock({ iconName: 'inbox', title: t('admin.common.empty'), text: t('admin.common.emptyFiltered') }));
           return;
@@ -365,7 +268,7 @@ export function taxonomyView(type) {
     function openEditor(item) {
       const panel = openPanel({
         title: item ? `${t(config.editLabel)}: ${config.label(item)}` : t(config.newLabel),
-        body: config.form(item, meta),
+        body: config.form(item, meta, options),
         submitLabel: item ? t('common.save') : t('common.create'),
         readOnly: !canWrite,
         onSubmit: async (form) => {
@@ -381,12 +284,14 @@ export function taxonomyView(type) {
             ? await api(`${config.endpoint}/${item.id}`, { method: 'PUT', body: values })
             : await api(config.endpoint, { method: 'POST', body: values });
           invalidateOptions();
+          if (type === 'categories') Object.assign(options, await getOptions({ force: true }));
           toast(item ? t('admin.common.saved') : t('admin.common.createdToast'), { type: 'ok' });
           await ctl.load();
           return saved ? undefined : true;
         }
       });
       liveValidation(panel.form);
+      bindImageFields(panel.form, meta);
     }
 
     on(root, 'click', '[data-create]', () => openEditor(null));

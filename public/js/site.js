@@ -3,19 +3,20 @@ import { initChrome } from './lib/chrome.js';
 import home from './pages/home.js';
 import catalog from './pages/catalog.js';
 import product from './pages/product.js';
-import suppliers from './pages/suppliers.js';
-import supplier from './pages/supplier.js';
-import quote from './pages/quote.js';
-import { loginPage, registerPage } from './pages/auth.js';
+import shops from './pages/shops.js';
+import shop from './pages/shop.js';
+import favorites from './pages/favorites.js';
+import { loginPage, registerPage, sellPage } from './pages/auth.js';
 import account from './pages/account.js';
 
 const PAGES = {
   home,
   catalog,
   product,
-  suppliers,
-  supplier,
-  quote,
+  shops,
+  shop,
+  favorites,
+  sell: sellPage,
   login: loginPage,
   'admin-login': loginPage,
   register: registerPage,

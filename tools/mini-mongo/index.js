@@ -6,11 +6,14 @@
  * It exists so the test suite and the offline demo (`npm run demo`) can run
  * the real Mongoose/driver code without a MongoDB installation. It supports
  * the subset of commands this application uses. It is NOT a database: no
- * persistence, no auth, no transactions. Never use it in production.
+ * auth, no transactions and only a simple JSON snapshot for persistence
+ * (`persistFile` option, used by `npm run demo`). Never use it in production.
  */
+const fs = require('node:fs');
+const path = require('node:path');
 const net = require('node:net');
 const BSON = require('bson');
-const { ObjectId, Long, Double } = BSON;
+const { ObjectId, Long, Double, EJSON } = BSON;
 const { DESERIALIZE_OPTIONS, clone, getPath, canonicalKey, isPlainObject, toNumber } = require('./values');
 const {
   CommandError,
@@ -96,10 +99,12 @@ class Collection {
       const withId = { _id: new ObjectId(), ...stored };
       this.assertUnique(withId);
       this.docs.push(withId);
+      this.db.touch();
       return withId;
     }
     this.assertUnique(stored);
     this.docs.push(stored);
+    this.db.touch();
     return stored;
   }
 
@@ -112,11 +117,13 @@ class Collection {
     this.assertUnique(updated, original);
     const idx = this.docs.indexOf(original);
     this.docs[idx] = updated;
+    this.db.touch();
   }
 
   removeDocs(toRemove) {
     const set = new Set(toRemove);
     this.docs = this.docs.filter((doc) => !set.has(doc));
+    this.db.touch();
   }
 
   sweepTtl(now) {
@@ -135,9 +142,14 @@ class Collection {
 }
 
 class Database {
-  constructor(name) {
+  constructor(name, onChange = () => {}) {
     this.name = name;
     this.collections = new Map();
+    this.onChange = onChange;
+  }
+
+  touch() {
+    this.onChange();
   }
 
   get(name, create = true) {
@@ -159,7 +171,11 @@ function commandName(cmd) {
 }
 
 class MiniMongoServer {
-  constructor({ host = '127.0.0.1', port = 0, ttlIntervalMs = 1000 } = {}) {
+  constructor({ host = '127.0.0.1', port = 0, ttlIntervalMs = 1000, persistFile = null, persistIntervalMs = 2000 } = {}) {
+    this.persistFile = persistFile;
+    this.persistIntervalMs = persistIntervalMs;
+    this.dirty = false;
+    this.persistTimer = null;
     this.host = host;
     this.port = port;
     this.ttlIntervalMs = ttlIntervalMs;
@@ -173,13 +189,54 @@ class MiniMongoServer {
   db(name) {
     let db = this.databases.get(name);
     if (!db) {
-      db = new Database(name);
+      db = new Database(name, () => {
+        this.dirty = true;
+      });
       this.databases.set(name, db);
     }
     return db;
   }
 
+  /** Restore databases from the JSON snapshot (Extended JSON keeps ObjectIds and Dates). */
+  loadSnapshot() {
+    if (!this.persistFile || !fs.existsSync(this.persistFile)) return false;
+    const snapshot = EJSON.parse(fs.readFileSync(this.persistFile, 'utf8'), { relaxed: false });
+    for (const [dbName, collections] of Object.entries(snapshot.databases || {})) {
+      const db = this.db(dbName);
+      for (const [collName, data] of Object.entries(collections)) {
+        const coll = db.get(collName);
+        coll.indexes = data.indexes;
+        coll.docs = data.docs;
+      }
+    }
+    this.dirty = false;
+    return true;
+  }
+
+  saveSnapshot() {
+    if (!this.persistFile) return;
+    const databases = {};
+    for (const [dbName, db] of this.databases) {
+      databases[dbName] = {};
+      for (const [collName, coll] of db.collections) {
+        databases[dbName][collName] = { indexes: coll.indexes, docs: coll.docs };
+      }
+    }
+    fs.mkdirSync(path.dirname(this.persistFile), { recursive: true });
+    const tmp = `${this.persistFile}.tmp`;
+    fs.writeFileSync(tmp, EJSON.stringify({ savedAt: new Date(), databases }, { relaxed: false }));
+    fs.renameSync(tmp, this.persistFile);
+    this.dirty = false;
+  }
+
   async start() {
+    this.loadSnapshot();
+    if (this.persistFile) {
+      this.persistTimer = setInterval(() => {
+        if (this.dirty) this.saveSnapshot();
+      }, this.persistIntervalMs);
+      this.persistTimer.unref();
+    }
     this.server = net.createServer((socket) => this.onConnection(socket));
     await new Promise((resolve, reject) => {
       this.server.once('error', reject);
@@ -201,6 +258,8 @@ class MiniMongoServer {
 
   async stop() {
     clearInterval(this.ttlTimer);
+    clearInterval(this.persistTimer);
+    if (this.dirty) this.saveSnapshot();
     for (const socket of this.sockets) socket.destroy();
     if (this.server) await new Promise((resolve) => this.server.close(() => resolve()));
     this.server = null;

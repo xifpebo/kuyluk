@@ -7,21 +7,19 @@
  */
 const express = require('express');
 const mongoose = require('mongoose');
-const { Product, Supplier, QuoteRequest, AuditLog } = require('../../models');
+const { Product, Shop, Review, User, AuditLog, ShopStat } = require('../../models');
 const { asyncHandler } = require('../../lib/errors');
 const { validateRequest, parse } = require('../../lib/schema');
 const v = require('../../validation');
 const { requireStaff, requirePermission, requireFreshPassword } = require('../../middleware/auth');
 const { PERMISSIONS: P, can } = require('../../security/rbac');
 const adminCatalog = require('../../services/adminCatalogService');
-const quotes = require('../../services/quoteService');
+const reviews = require('../../services/reviewService');
+const content = require('../../services/contentService');
 const users = require('../../services/userAdminService');
-const { saveImage, IMAGE_TYPES } = require('../../services/uploadService');
-const { recordAudit } = require('../../services/audit');
 const { escapeRegex } = require('../../lib/text');
 
 const { trusted } = mongoose;
-const OPEN_STATUSES = ['new', 'in_progress', 'quoted'];
 
 function mountCrud(router, path, service, schema, { read, write, remove }) {
   router.get(
@@ -59,49 +57,56 @@ function mountCrud(router, path, service, schema, { read, write, remove }) {
 }
 
 async function dashboard(auth) {
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const [
-    activeProducts,
+    approvedProducts,
+    pendingProducts,
+    activeShops,
+    pendingShops,
+    pendingReviews,
+    users30,
     outOfStock,
-    newQuotes,
-    activeSuppliers,
-    quotes30,
-    pipeline,
-    recentQuotes,
-    lowStock,
-    byStatus,
+    statRows,
+    recentProducts,
+    topShops,
     recentActivity
   ] = await Promise.all([
-    Product.countDocuments({ isActive: true }),
-    Product.countDocuments({ isActive: true, 'stock.status': 'out_of_stock' }),
-    QuoteRequest.countDocuments({ status: 'new' }),
-    Supplier.countDocuments({ isActive: true }),
-    QuoteRequest.countDocuments({ createdAt: trusted({ $gte: since }) }),
-    QuoteRequest.aggregate([
-      { $match: { status: { $in: OPEN_STATUSES } } },
-      { $group: { _id: null, total: { $sum: '$estimatedTotal' } } }
+    Product.countDocuments({ status: 'approved', isActive: true }),
+    Product.countDocuments({ status: 'pending' }),
+    Shop.countDocuments({ status: 'approved' }),
+    Shop.countDocuments({ status: 'pending' }),
+    Review.countDocuments({ status: 'pending' }),
+    User.countDocuments({ createdAt: trusted({ $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }) }),
+    Product.countDocuments({ status: 'approved', 'stock.status': 'out_of_stock' }),
+    ShopStat.aggregate([
+      { $match: { day: { $gte: since } } },
+      {
+        $group: {
+          _id: '$day',
+          views: { $sum: { $add: ['$productViews', '$shopViews'] } },
+          contacts: { $sum: { $add: ['$contacts.phone', '$contacts.telegram', '$contacts.instagram', '$contacts.whatsapp'] } }
+        }
+      },
+      { $sort: { _id: 1 } }
     ]),
-    QuoteRequest.find({}).sort({ createdAt: -1 }).limit(6).populate('assignedTo', 'name').lean(),
-    Product.find({ isActive: true, 'stock.status': trusted({ $in: ['low_stock', 'out_of_stock'] }) })
-      .select('sku slug name stock unit')
-      .sort({ updatedAt: -1 })
-      .limit(6)
-      .lean(),
-    QuoteRequest.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Product.find({ status: 'pending' }).select('sku name shop submittedAt images').sort({ submittedAt: -1 }).limit(6).populate('shop', 'name').lean(),
+    Shop.find({ status: 'approved' }).select('name slug rating reviewCount').sort({ rating: -1, reviewCount: -1 }).limit(5).lean(),
     can(auth.role, P.AUDIT_READ) ? AuditLog.find({}).sort({ at: -1 }).limit(8).lean() : Promise.resolve([])
   ]);
+  const views30 = statRows.reduce((sum, row) => sum + row.views, 0);
+  const contacts30 = statRows.reduce((sum, row) => sum + row.contacts, 0);
   return {
-    kpis: {
-      activeProducts,
-      outOfStock,
-      newQuotes,
-      activeSuppliers,
-      quotes30,
-      pipelineTotal: pipeline[0]?.total || 0
-    },
-    recentQuotes: recentQuotes.map((quote) => quotes.serializeQuote(quote, { internal: true })),
-    lowStock: lowStock.map((p) => ({ id: String(p._id), sku: p.sku, slug: p.slug, name: p.name, stock: p.stock, unit: p.unit })),
-    quotesByStatus: Object.fromEntries(byStatus.map((row) => [row._id, row.count])),
+    kpis: { approvedProducts, pendingProducts, activeShops, pendingShops, pendingReviews, users30, outOfStock, views30, contacts30 },
+    series: statRows.map((row) => ({ day: row._id, views: row.views, contacts: row.contacts })),
+    pending: recentProducts.map((p) => ({
+      id: String(p._id),
+      sku: p.sku,
+      name: p.name,
+      image: p.images?.[0] || null,
+      shop: p.shop?.name || '',
+      submittedAt: p.submittedAt
+    })),
+    topShops: topShops.map((s) => ({ id: String(s._id), name: s.name, slug: s.slug, rating: s.rating, reviewCount: s.reviewCount })),
     recentActivity: recentActivity.map(auditJson)
   };
 }
@@ -137,8 +142,7 @@ function createAdminRouter({ config, limiter }) {
     '/options',
     requirePermission(P.PRODUCTS_READ),
     asyncHandler(async (req, res) => {
-      const [catalogOptions, staff] = await Promise.all([adminCatalog.formOptions(), users.staffOptions()]);
-      res.json({ ...catalogOptions, staff });
+      res.json(await adminCatalog.formOptions());
     })
   );
 
@@ -174,6 +178,12 @@ function createAdminRouter({ config, limiter }) {
     validateRequest({ params: v.idParams, body: v.productPatch }),
     asyncHandler(async (req, res) => res.json(await adminCatalog.patchProduct(req, req.valid.params.id, req.valid.body)))
   );
+  router.post(
+    '/products/:id/moderate',
+    requirePermission(P.PRODUCTS_APPROVE),
+    validateRequest({ params: v.idParams, body: v.moderation }),
+    asyncHandler(async (req, res) => res.json(await adminCatalog.moderateProduct(req, req.valid.params.id, req.valid.body)))
+  );
   router.delete(
     '/products/:id',
     requirePermission(P.PRODUCTS_DELETE),
@@ -184,7 +194,7 @@ function createAdminRouter({ config, limiter }) {
     })
   );
 
-  /* ------------------------------------------- categories/brands/suppliers */
+  /* --------------------------------------------------- categories/brands */
   mountCrud(router, '/categories', adminCatalog.categories, v.categoryBody, {
     read: P.PRODUCTS_READ,
     write: P.TAXONOMY_WRITE,
@@ -195,39 +205,127 @@ function createAdminRouter({ config, limiter }) {
     write: P.TAXONOMY_WRITE,
     remove: P.TAXONOMY_DELETE
   });
-  mountCrud(router, '/suppliers', adminCatalog.suppliers, v.supplierBody, {
-    read: P.PRODUCTS_READ,
-    write: P.SUPPLIERS_WRITE,
-    remove: P.SUPPLIERS_DELETE
-  });
 
-  /* ------------------------------------------------------------ quotes */
+  /* --------------------------------------------------------------- shops */
   router.get(
-    '/quotes',
-    requirePermission(P.QUOTES_READ),
-    validateRequest({ query: v.adminQuoteQuery }),
-    asyncHandler(async (req, res) => res.json(await quotes.listQuotes(req.valid.query, req.auth)))
+    '/shops',
+    requirePermission(P.PRODUCTS_READ),
+    validateRequest({ query: v.shopListAdminQuery }),
+    asyncHandler(async (req, res) => res.json(await adminCatalog.listShops(req.valid.query)))
   );
   router.get(
-    '/quotes/:id',
-    requirePermission(P.QUOTES_READ),
+    '/shops/:id',
+    requirePermission(P.PRODUCTS_READ),
     validateRequest({ params: v.idParams }),
-    asyncHandler(async (req, res) => res.json(await quotes.getQuote(req.valid.params.id)))
+    asyncHandler(async (req, res) => res.json(await adminCatalog.getShop(req.valid.params.id)))
   );
-  router.patch(
-    '/quotes/:id',
-    requirePermission(P.QUOTES_WRITE),
-    validateRequest({ params: v.idParams, body: v.quoteUpdate }),
-    asyncHandler(async (req, res) => res.json(await quotes.updateQuote(req, req.valid.params.id, req.valid.body)))
+  router.post(
+    '/shops',
+    requirePermission(P.SHOPS_WRITE),
+    asyncHandler(async (req, res) => res.status(201).json(await adminCatalog.createShop(req, parse(v.shopBody, req.body))))
+  );
+  router.put(
+    '/shops/:id',
+    requirePermission(P.SHOPS_WRITE),
+    validateRequest({ params: v.idParams }),
+    asyncHandler(async (req, res) => res.json(await adminCatalog.updateShop(req, req.valid.params.id, parse(v.shopBody, req.body))))
+  );
+  router.post(
+    '/shops/:id/status',
+    requirePermission(P.SHOPS_APPROVE),
+    validateRequest({ params: v.idParams, body: v.shopStatus }),
+    asyncHandler(async (req, res) => res.json(await adminCatalog.setShopStatus(req, req.valid.params.id, req.valid.body)))
   );
   router.delete(
-    '/quotes/:id',
-    requirePermission(P.QUOTES_DELETE),
+    '/shops/:id',
+    requirePermission(P.SHOPS_DELETE),
     validateRequest({ params: v.idParams }),
     asyncHandler(async (req, res) => {
-      await quotes.deleteQuote(req, req.valid.params.id);
+      await adminCatalog.deleteShop(req, req.valid.params.id);
       res.json({ ok: true });
     })
+  );
+
+  /* ------------------------------------------------------------- reviews */
+  router.get(
+    '/reviews',
+    requirePermission(P.REVIEWS_MODERATE),
+    validateRequest({ query: v.reviewAdminQuery }),
+    asyncHandler(async (req, res) => res.json(await reviews.adminList(req.valid.query)))
+  );
+  router.patch(
+    '/reviews/:id',
+    requirePermission(P.REVIEWS_MODERATE),
+    validateRequest({ params: v.idParams, body: v.reviewModeration }),
+    asyncHandler(async (req, res) => res.json(await reviews.moderate(req, req.valid.params.id, req.valid.body.status)))
+  );
+  router.delete(
+    '/reviews/:id',
+    requirePermission(P.REVIEWS_MODERATE),
+    validateRequest({ params: v.idParams }),
+    asyncHandler(async (req, res) => {
+      await reviews.remove(req, req.valid.params.id);
+      res.json({ ok: true });
+    })
+  );
+
+  /* ------------------------------------------------------------- content */
+  router.get('/banners', requirePermission(P.CONTENT_WRITE), asyncHandler(async (req, res) => res.json(await content.listBanners())));
+  router.get(
+    '/banners/:id',
+    requirePermission(P.CONTENT_WRITE),
+    validateRequest({ params: v.idParams }),
+    asyncHandler(async (req, res) => res.json(await content.getBanner(req.valid.params.id)))
+  );
+  router.post(
+    '/banners',
+    requirePermission(P.CONTENT_WRITE),
+    asyncHandler(async (req, res) => res.status(201).json(await content.createBanner(req, parse(v.bannerBody, req.body))))
+  );
+  router.put(
+    '/banners/:id',
+    requirePermission(P.CONTENT_WRITE),
+    validateRequest({ params: v.idParams }),
+    asyncHandler(async (req, res) => res.json(await content.updateBanner(req, req.valid.params.id, parse(v.bannerBody, req.body))))
+  );
+  router.delete(
+    '/banners/:id',
+    requirePermission(P.CONTENT_WRITE),
+    validateRequest({ params: v.idParams }),
+    asyncHandler(async (req, res) => {
+      await content.removeBanner(req, req.valid.params.id);
+      res.json({ ok: true });
+    })
+  );
+
+  router.get('/settings', requirePermission(P.CONTENT_WRITE), asyncHandler(async (req, res) => res.json(await content.getSettings(config))));
+  router.put(
+    '/settings',
+    requirePermission(P.SETTINGS_WRITE),
+    validateRequest({ body: v.settingsBody }),
+    asyncHandler(async (req, res) => res.json(await content.updateSettings(req, config, req.valid.body)))
+  );
+  router.patch(
+    '/settings/home',
+    requirePermission(P.CONTENT_WRITE),
+    validateRequest({ body: v.settingsBody }),
+    asyncHandler(async (req, res) => {
+      const { home, announcement, sections } = req.valid.body;
+      res.json(await content.updateSettings(req, config, { home, announcement, sections }));
+    })
+  );
+
+  router.get(
+    '/translations',
+    requirePermission(P.TRANSLATIONS_WRITE),
+    validateRequest({ query: v.translationQuery }),
+    asyncHandler(async (req, res) => res.json(await content.listTranslations(req.valid.query)))
+  );
+  router.put(
+    '/translations',
+    requirePermission(P.TRANSLATIONS_WRITE),
+    validateRequest({ body: v.translationBody }),
+    asyncHandler(async (req, res) => res.json(await content.saveTranslation(req, req.valid.body)))
   );
 
   /* ------------------------------------------------------------- users */
@@ -310,23 +408,6 @@ function createAdminRouter({ config, limiter }) {
         AuditLog.countDocuments(filter)
       ]);
       res.json({ items: docs.map(auditJson), total, page: q.page, pages: Math.ceil(total / q.limit), limit: q.limit });
-    })
-  );
-
-  /* ----------------------------------------------------------- uploads */
-  router.post(
-    '/uploads',
-    requirePermission(P.UPLOADS_WRITE),
-    limiter.limit({ name: 'uploads', windowMs: 60 * 60 * 1000, max: 120, key: (req) => req.auth.userId }),
-    express.raw({ type: IMAGE_TYPES, limit: config.uploads.maxBytes }),
-    asyncHandler(async (req, res) => {
-      const saved = await saveImage(config, req.body, req.get('content-type'));
-      await recordAudit(req, {
-        action: 'upload.create',
-        entity: { type: 'upload', id: saved.url.split('/').pop().split('.')[0], label: saved.url },
-        meta: { size: saved.size, type: saved.type }
-      });
-      res.status(201).json(saved);
     })
   );
 

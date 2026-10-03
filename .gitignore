@@ -9,3 +9,6 @@ coverage/
 .DS_Store
 Thumbs.db
 public/fonts/*.woff2
+.data/
+tools/render/jobs.json
+tools/render/__pycache__/

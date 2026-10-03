@@ -1,0 +1,124 @@
+<div class="page-head blueprint">
+  <div class="container sell-head">
+    <div>
+      <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+        <ol>
+          <li><a href="/">{{t:common.home}}</a></li>
+          <li aria-current="page">{{t:sell.title}}</li>
+        </ol>
+      </nav>
+      <p class="eyebrow">{{t:sell.eyebrow}}</p>
+      <h1 class="page-title display">{{t:sell.title}}</h1>
+      <p class="page-lead page-lead--wide">{{t:sell.lead}}</p>
+    </div>
+    <ul class="sell-benefits">
+      <li><svg class="icon" aria-hidden="true"><use href="#i-tag"></use></svg><span><strong>{{t:sell.benefit1Title}}</strong>{{t:sell.benefit1Text}}</span></li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg><span><strong>{{t:sell.benefit2Title}}</strong>{{t:sell.benefit2Text}}</span></li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-activity"></use></svg><span><strong>{{t:sell.benefit3Title}}</strong>{{t:sell.benefit3Text}}</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="container section section--tight sell-layout">
+  <section class="auth-card auth-card--wide" aria-labelledby="sell-form-title">
+    <h2 class="auth-card__title display" id="sell-form-title">{{t:sell.formTitle}}</h2>
+    <p class="auth-card__lead">{{t:sell.formLead}}</p>
+    <form class="stack" data-sell-form novalidate>
+      <fieldset class="form-section">
+        <legend class="form-section__title"><span>01</span>{{t:sell.stepShop}}</legend>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="sell-shop-name">{{t:sell.shopName}}</label>
+            <input class="control" id="sell-shop-name" name="shop.name" type="text" required minlength="2" maxlength="100" autocomplete="organization">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-city">{{t:sell.city}}</label>
+            <select class="control" id="sell-city" name="shop.city" required data-regions></select>
+          </div>
+          <div class="field field--wide">
+            <label class="field__label" for="sell-address">{{t:sell.address}}</label>
+            <input class="control" id="sell-address" name="shop.address" type="text" required minlength="5" maxlength="200" placeholder="{{t:sell.addressPlaceholder}}">
+          </div>
+          <div class="field field--wide">
+            <label class="field__label" for="sell-desc">{{t:sell.description}}</label>
+            <textarea class="control" id="sell-desc" name="shop.description" rows="4" required minlength="20" maxlength="2000" placeholder="{{t:sell.descriptionPlaceholder}}"></textarea>
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-shop-phone">{{t:sell.shopPhone}}</label>
+            <input class="control" id="sell-shop-phone" name="shop.phone" type="tel" inputmode="tel" required maxlength="25" placeholder="+998 __ ___ __ __">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-hours">{{t:sell.hours}}</label>
+            <input class="control" id="sell-hours" name="shop.workingHours" type="text" maxlength="20" value="09:00–18:00" pattern="\d{2}:\d{2}\s?[–-]\s?\d{2}:\d{2}">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-telegram">Telegram <span class="field__optional">({{t:common.optional}})</span></label>
+            <input class="control" id="sell-telegram" name="shop.telegram" type="text" maxlength="40" placeholder="@username">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-instagram">Instagram <span class="field__optional">({{t:common.optional}})</span></label>
+            <input class="control" id="sell-instagram" name="shop.instagram" type="text" maxlength="60" placeholder="@shop">
+          </div>
+          <label class="checkbox field--wide">
+            <input type="checkbox" name="shop.deliveryAvailable" value="true">
+            <span class="checkbox__box" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+            <span>{{t:sell.delivery}}</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title"><span>02</span>{{t:sell.stepOwner}}</legend>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field__label" for="sell-name">{{t:auth.name}}</label>
+            <input class="control" id="sell-name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="100">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-phone">{{t:auth.phone}}</label>
+            <input class="control" id="sell-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="25" placeholder="+998 __ ___ __ __">
+          </div>
+          <div class="field field--wide">
+            <label class="field__label" for="sell-email">{{t:auth.email}}</label>
+            <input class="control" id="sell-email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254">
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-password">{{t:auth.password}}</label>
+            <div class="password-input">
+              <input class="control" id="sell-password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128" data-password-policy>
+              <button class="password-input__toggle" type="button" data-password-toggle aria-pressed="false" aria-controls="sell-password" data-label-show="{{t:auth.showPassword}}" data-label-hide="{{t:auth.hidePassword}}">
+                <svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg><span class="visually-hidden">{{t:auth.showPassword}}</span>
+              </button>
+            </div>
+            {{> password-rules}}
+          </div>
+          <div class="field">
+            <label class="field__label" for="sell-password2">{{t:auth.passwordConfirm}}</label>
+            <input class="control" id="sell-password2" name="passwordConfirm" type="password" autocomplete="new-password" required maxlength="128" data-match="password">
+          </div>
+        </div>
+      </fieldset>
+      <div class="hp-field" aria-hidden="true"><label for="sell-website">Website</label><input id="sell-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+      <div class="field">
+        <label class="checkbox">
+          <input type="checkbox" name="terms" value="true" required>
+          <span class="checkbox__box" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+          <span>{{t:sell.terms}}</span>
+        </label>
+      </div>
+      <p class="form-error" role="alert" data-form-error hidden></p>
+      <button class="btn btn-accent btn-lg btn-block" type="submit">{{t:sell.submit}}</button>
+    </form>
+    <p class="auth-card__alt">{{t:sell.haveAccount}} <a href="/login?next=%2Fseller">{{t:nav.login}}</a></p>
+  </section>
+  <aside class="sell-steps">
+    <h2 class="sell-steps__title">{{t:sell.howTitle}}</h2>
+    <ol class="timeline">
+      <li><strong>{{t:sell.how1Title}}</strong><span>{{t:sell.how1Text}}</span></li>
+      <li><strong>{{t:sell.how2Title}}</strong><span>{{t:sell.how2Text}}</span></li>
+      <li><strong>{{t:sell.how3Title}}</strong><span>{{t:sell.how3Text}}</span></li>
+      <li><strong>{{t:sell.how4Title}}</strong><span>{{t:sell.how4Text}}</span></li>
+    </ol>
+    <p class="muted small">{{t:sell.questions}} <a href="{{v:contact.telegramHref}}" target="_blank" rel="noopener noreferrer">@{{v:contact.telegram}}</a> · <a href="{{v:contact.phoneHref}}">{{v:contact.phone}}</a></p>
+  </aside>
+</div>
