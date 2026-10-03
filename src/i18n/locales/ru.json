@@ -713,7 +713,9 @@
       "views": "Просмотры",
       "contacts": "Обращения",
       "discountHint": "Скидка: −{percent}%",
-      "imageRequired": "Добавьте хотя бы одно фото"
+      "imageRequired": "Добавьте хотя бы одно фото",
+      "visibility": "Видимость",
+      "allVisibility": "Опубликованные и скрытые"
     },
     "categories": {
       "title": "Категории",

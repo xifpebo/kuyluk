@@ -188,8 +188,8 @@ export async function productListView({ root, query }) {
       ${filterSelect({ name: 'stock', label: t('admin.products.stockStatus'), allLabel: t('admin.products.allStock'), options: meta.stockStatuses.map((s) => ({ value: s, label: t(`stock.${s}`) })) })}
       ${filterSelect({
         name: 'active',
-        label: t('admin.common.status'),
-        allLabel: t('admin.products.allStatuses'),
+        label: t('admin.products.visibility'),
+        allLabel: t('admin.products.allVisibility'),
         options: [
           { value: 'active', label: t('admin.products.published') },
           { value: 'inactive', label: t('admin.products.hidden') }

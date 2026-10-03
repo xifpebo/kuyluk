@@ -705,7 +705,9 @@
       "views": "Koʻrishlar",
       "contacts": "Murojaatlar",
       "discountHint": "Chegirma: −{percent}%",
-      "imageRequired": "Kamida bitta rasm qoʻshing"
+      "imageRequired": "Kamida bitta rasm qoʻshing",
+      "visibility": "Koʻrinish",
+      "allVisibility": "Eʼlon qilingan va yashirilgan"
     },
     "categories": {
       "title": "Toifalar",

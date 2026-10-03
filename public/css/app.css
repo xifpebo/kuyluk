@@ -4067,11 +4067,6 @@ dialog.modal::backdrop {
   margin-bottom: 14px;
 }
 
-.form-grid,
-  .choice-cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
 /* ==========================================================================
    Stroy Bazar marketplace components
    ========================================================================== */
@@ -6026,7 +6021,9 @@ table.spec-table tr:last-child td {
 }
 
 .sell-layout .auth-card {
+  grid-column: auto;
   max-width: none;
+  margin: 0;
 }
 
 .form-section {
