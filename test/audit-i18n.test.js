@@ -76,7 +76,7 @@ describe('internationalisation', () => {
     assert.match(uz.data, /<html lang="uz"/);
     const ru = await client.get('/catalog?lang=ru');
     assert.match(ru.data, /<html lang="ru"/);
-    assert.ok(ru.headers.getSetCookie().some((c) => c.startsWith('bb_lang=')));
+    assert.ok(ru.headers.getSetCookie().some((c) => c.startsWith('sb_lang=')));
     const again = await client.get('/catalog');
     assert.match(again.data, /<html lang="ru"/, 'choice remembered');
     assert.match(again.data, /hreflang="uz"/);

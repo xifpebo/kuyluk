@@ -1,8 +1,8 @@
 {
-  "name": "big-bazaar-build",
-  "version": "2.0.0",
+  "name": "stroy-bazar",
+  "version": "3.0.0",
   "private": true,
-  "description": "Construction materials marketplace & quote-request catalog (Uzbek/Russian) with a hardened admin panel",
+  "description": "Stroy Bazar \u2014 construction & renovation products marketplace catalog (Uzbek/Russian): shops, moderation, seller cabinet and a hardened admin panel",
   "main": "server.js",
   "engines": {
     "node": ">=22"
@@ -16,9 +16,11 @@
     "create-admin": "node scripts/create-superadmin.js",
     "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
     "check:i18n": "node -e \"const r=require('./src/i18n').missingKeys();console.log(r);process.exit(r.missingInRu.length||r.missingInUz.length?1:0)\"",
-    "generate:illustrations": "node tools/generate-illustrations.js",
     "lint": "eslint .",
-    "check": "npm run lint && npm run check:i18n && npm test"
+    "check": "npm run lint && npm run check:i18n && npm test",
+    "brand:assets": "node tools/generate-brand-assets.js && node tools/render/brand-raster.js",
+    "render:jobs": "node tools/render/export-jobs.js",
+    "render": "python3 tools/render/render.py"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

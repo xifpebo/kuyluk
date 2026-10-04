@@ -5,7 +5,7 @@ services:
     build: .
     env_file: .env
     environment:
-      MONGODB_URI: mongodb://mongo:27017/big-bazaar-build
+      MONGODB_URI: mongodb://mongo:27017/stroy-bazar
       TRUST_PROXY: "1"
     ports:
       - "5000:5000"

@@ -2,7 +2,7 @@
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { startTestApp, PASSWORDS } = require('./helpers');
+const { startTestApp, PASSWORDS, OWNERS } = require('./helpers');
 const { can, permissionsFor } = require('../src/security/rbac');
 
 describe('role-based access control', () => {
@@ -27,8 +27,12 @@ describe('role-based access control', () => {
     assert.ok(can('manager', 'products:write'));
     assert.ok(!can('manager', 'users:manage'));
     assert.ok(!can('manager', 'audit:read'));
-    assert.ok(!can('manager', 'quotes:delete'));
-    assert.deepEqual(permissionsFor('user'), ['account:self']);
+    assert.ok(!can('manager', 'taxonomy:delete'));
+    assert.ok(!can('manager', 'shops:delete'));
+    assert.ok(can('manager', 'products:approve'));
+    assert.ok(!can('superadmin', 'seller:access'), 'staff never act as a shop owner');
+    assert.deepEqual([...permissionsFor('shop_owner')].sort(), ['account:self', 'reviews:write', 'seller:access', 'uploads:write']);
+    assert.deepEqual([...permissionsFor('user')].sort(), ['account:self', 'reviews:write']);
     assert.deepEqual(permissionsFor('hacker'), []);
   });
 
@@ -37,7 +41,9 @@ describe('role-based access control', () => {
     ['GET', '/api/admin/products'],
     ['GET', '/api/admin/users'],
     ['GET', '/api/admin/audit'],
-    ['GET', '/api/admin/quotes'],
+    ['GET', '/api/admin/shops'],
+    ['GET', '/api/admin/reviews'],
+    ['GET', '/api/admin/settings'],
     ['POST', '/api/admin/categories']
   ];
 
@@ -58,16 +64,34 @@ describe('role-based access control', () => {
     }
   });
 
-  it('lets managers run the catalog and quotes but not users, audit or taxonomy deletion', async () => {
+  it('refuses shop owners on every admin endpoint', async () => {
+    const owner = ctx.client();
+    await owner.login(OWNERS.aqualux.email, OWNERS.aqualux.password);
+    for (const [method, url] of adminEndpoints) {
+      // eslint-disable-next-line no-await-in-loop
+      const res = method === 'GET' ? await owner.get(url) : await owner.post(url, {});
+      assert.equal(res.status, 403, `${method} ${url}`);
+    }
+  });
+
+  it('keeps the seller cabinet for shop owners only', async () => {
+    assert.equal((await ctx.client().get('/api/seller/products')).status, 401);
+    assert.equal((await customer.get('/api/seller/products')).status, 403);
+    assert.equal((await admin.get('/api/seller/products')).status, 403);
+  });
+
+  it('lets managers run the catalog and moderation but not users, audit or deletions', async () => {
     assert.equal((await manager.get('/api/admin/dashboard')).status, 200);
     assert.equal((await manager.get('/api/admin/products')).status, 200);
-    assert.equal((await manager.get('/api/admin/quotes')).status, 200);
+    assert.equal((await manager.get('/api/admin/shops')).status, 200);
+    assert.equal((await manager.get('/api/admin/reviews')).status, 200);
     assert.equal((await manager.get('/api/admin/users')).status, 403);
     assert.equal((await manager.get('/api/admin/audit')).status, 403);
     const categories = await manager.get('/api/admin/categories');
     assert.equal((await manager.del(`/api/admin/categories/${categories.data.items[0].id}`)).status, 403);
-    const quotes = await manager.get('/api/admin/quotes');
-    assert.equal((await manager.del(`/api/admin/quotes/${quotes.data.items[0].id}`)).status, 403);
+    const shops = await manager.get('/api/admin/shops');
+    assert.equal((await manager.del(`/api/admin/shops/${shops.data.items[0].id}`)).status, 403);
+    assert.equal((await manager.put('/api/admin/settings', {})).status, 403, 'site settings are super-admin only');
     const dashboard = await manager.get('/api/admin/dashboard');
     assert.deepEqual(dashboard.data.recentActivity, [], 'no audit data leaks to managers');
   });
@@ -101,8 +125,24 @@ describe('role-based access control', () => {
   });
 
   it('keeps customers inside their own data', async () => {
-    const own = await customer.get('/api/account/quotes');
+    const own = await customer.get('/api/account/reviews');
     assert.equal(own.status, 200);
     assert.ok(Array.isArray(own.data.items));
+    const favorites = await customer.get('/api/account/favorites');
+    assert.equal(favorites.status, 200);
+  });
+
+  it('scopes shop owners to their own shop', async () => {
+    const owner = ctx.client();
+    await owner.login(OWNERS.aqualux.email, OWNERS.aqualux.password);
+    const shop = await owner.get('/api/seller/shop');
+    assert.equal(shop.data.slug, OWNERS.aqualux.slug);
+    const mine = await owner.get('/api/seller/products?limit=100');
+    assert.ok(mine.data.items.length > 0);
+    assert.ok(mine.data.items.every((p) => p.shop === shop.data.id));
+    const foreign = (await admin.get('/api/admin/products?limit=100')).data.items.find((p) => p.shop !== shop.data.id);
+    assert.equal((await owner.get(`/api/seller/products/${foreign.id}`)).status, 404);
+    assert.equal((await owner.patch(`/api/seller/products/${foreign.id}`, { price: 1 })).status, 404);
+    assert.equal((await owner.del(`/api/seller/products/${foreign.id}`)).status, 404);
   });
 });

@@ -36,7 +36,7 @@ describe('authentication, sessions and CSRF', () => {
   it('rejects cross-site requests even with a token', async () => {
     const client = ctx.client();
     await client.session();
-    const res = await client.post('/api/quotes', {}, { headers: { Origin: 'https://evil.example' } });
+    const res = await client.post('/api/reviews', {}, { headers: { Origin: 'https://evil.example' } });
     assert.equal(res.status, 403);
     assert.equal(res.data.error.code, 'csrf_failed');
   });
@@ -46,7 +46,7 @@ describe('authentication, sessions and CSRF', () => {
     const res = await client.login('admin@test.local', PASSWORDS.admin, 'admin');
     assert.equal(res.status, 200);
     assert.equal(res.data.isStaff, true);
-    const cookie = res.headers.getSetCookie().find((c) => c.startsWith('bb_sid='));
+    const cookie = res.headers.getSetCookie().find((c) => c.startsWith('sb_sid='));
     assert.ok(cookie, 'session cookie set');
     assert.match(cookie, /HttpOnly/i);
     assert.match(cookie, /SameSite=Strict/i);
@@ -59,7 +59,7 @@ describe('authentication, sessions and CSRF', () => {
   it('gives customers a SameSite=Lax cookie and refuses them on the admin login', async () => {
     const site = await ctx.client().login('customer@test.local', PASSWORDS.customer);
     assert.equal(site.status, 200);
-    assert.match(site.headers.getSetCookie().find((c) => c.startsWith('bb_sid=')), /SameSite=Lax/i);
+    assert.match(site.headers.getSetCookie().find((c) => c.startsWith('sb_sid=')), /SameSite=Lax/i);
     const admin = await ctx.client().login('customer@test.local', PASSWORDS.customer, 'admin');
     assert.equal(admin.status, 401);
     assert.equal(admin.data.error.code, 'invalid_credentials');
@@ -94,11 +94,11 @@ describe('authentication, sessions and CSRF', () => {
   it('logs out and invalidates the server-side session', async () => {
     const client = ctx.client();
     await client.login('manager@test.local', PASSWORDS.manager);
-    const stolen = client.jar.get('bb_sid');
+    const stolen = client.jar.get('sb_sid');
     assert.ok(stolen);
     const out = await client.post('/api/auth/logout', {});
     assert.equal(out.status, 200);
-    const replay = await fetch(`${ctx.baseUrl}/api/admin/dashboard`, { headers: { Cookie: `bb_sid=${stolen}` } });
+    const replay = await fetch(`${ctx.baseUrl}/api/admin/dashboard`, { headers: { Cookie: `sb_sid=${stolen}` } });
     assert.equal(replay.status, 401);
   });
 

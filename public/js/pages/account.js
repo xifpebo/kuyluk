@@ -1,5 +1,5 @@
 import { $, html, setHTML, icon } from '../lib/dom.js';
-import { t, tn, loc, fmtMoney, fmtNumber, fmtDate, unitShort } from '../lib/i18n.js';
+import { t, loc, fmtDate } from '../lib/i18n.js';
 import { api, getSession, applySession, logout } from '../lib/api.js';
 import { badge, emptyState, errorState, setBusy, toast, confirmDialog } from '../lib/ui.js';
 import {
@@ -11,66 +11,50 @@ import {
   bindPasswordToggles,
   bindPasswordMeters
 } from '../lib/forms.js';
-import { productUrl } from '../lib/format.js';
+import { productUrl, shopUrl, stars } from '../lib/format.js';
+import { productGrid } from '../lib/product-card.js';
+import * as favorites from '../lib/favorites.js';
 
-const STATUS_TONE = {
-  new: 'info',
-  in_progress: 'warn',
-  quoted: 'accent',
-  accepted: 'ok',
-  rejected: 'danger',
-  cancelled: 'muted'
-};
+const REVIEW_TONE = { pending: 'warn', approved: 'ok', rejected: 'danger' };
 
-export function quoteStatusBadge(status) {
-  return badge(t(`quoteStatus.${status}`), STATUS_TONE[status] || 'muted', { dot: status !== 'quoted' });
-}
-
-function quoteRow(quote) {
-  return html`<li>
-    <details class="quote-row">
-      <summary class="quote-row__summary">
-        <span>
-          <span class="quote-row__number">${quote.number}</span><br>
-          <span class="quote-row__date">${fmtDate(quote.createdAt)} · ${tn('common.positions', quote.items.length)}</span>
-        </span>
-        ${quoteStatusBadge(quote.status)}
-        <span class="quote-row__total">${fmtMoney(quote.quotedTotal ?? quote.estimatedTotal)}</span>
-        ${icon('chevron-down')}
-      </summary>
-      <div class="quote-row__body table-scroll">
-        <table class="mini-table">
-          <thead><tr><th>${t('account.product')}</th><th class="num">${t('account.qty')}</th><th class="num">${t('quote.unitPrice')}</th><th class="num">${t('quote.lineTotal')}</th></tr></thead>
-          <tbody>
-            ${quote.items.map(
-              (item) => html`<tr>
-                <td><a href="${productUrl(item)}">${loc(item.name)}</a><br><span class="muted small">${item.sku}</span></td>
-                <td class="num">${fmtNumber(item.qty)} ${unitShort(item.unit)}</td>
-                <td class="num">${fmtMoney(item.quotedUnitPrice ?? item.unitPrice)}</td>
-                <td class="num">${fmtMoney(item.quotedUnitPrice != null ? Math.round(item.quotedUnitPrice * item.qty) : item.lineTotal)}</td>
-              </tr>`
-            )}
-          </tbody>
-        </table>
-        <p class="muted small">${t('account.total')}: ${fmtMoney(quote.estimatedTotal)}${quote.quotedTotal != null ? html` · ${t('account.quotedTotal')}: <strong>${fmtMoney(quote.quotedTotal)}</strong>` : ''}</p>
-      </div>
-    </details>
+function reviewRow(review) {
+  const target = review.product
+    ? html`<a href="${productUrl(review.product)}">${loc(review.product.name)}</a>`
+    : review.shop
+      ? html`<a href="${shopUrl(review.shop)}">${review.shop.name}</a>`
+      : '';
+  return html`<li class="my-review">
+    <div class="my-review__head">${target}${badge(t(`reviews.status.${review.status}`), REVIEW_TONE[review.status] || 'muted', { dot: true })}</div>
+    <div class="my-review__body">${stars(review.rating)}<span class="muted small">${fmtDate(review.createdAt)}</span></div>
+    ${review.text ? html`<p>${review.text}</p>` : ''}
   </li>`;
 }
 
-async function loadQuotes() {
-  const holder = $('[data-account-quotes]');
+async function loadFavorites() {
+  const holder = $('[data-account-favorites]');
+  const ids = favorites.list();
   try {
-    const { items } = await api('/api/account/quotes');
-    setHTML(
-      holder,
-      items.length
-        ? html`<ul class="quote-list">${items.map(quoteRow)}</ul>`
-        : emptyState({ iconName: 'clipboard', title: t('account.noQuotes'), action: { href: '/catalog', label: t('quote.browseCatalog') } })
-    );
+    if (!ids.length) {
+      setHTML(holder, emptyState({ iconName: 'heart', title: t('favorites.emptyTitle'), text: t('favorites.emptyText'), action: { href: '/catalog', label: t('nav.catalog') } }));
+      return;
+    }
+    const { items } = await api(`/api/catalog/lookup?ids=${ids.slice(0, 8).join(',')}`);
+    setHTML(holder, html`<div class="product-grid product-grid--compact">${productGrid(items, { compact: true })}</div>
+      <a class="btn btn-ghost btn-sm" href="/favorites">${t('favorites.openAll', { count: ids.length })}${icon('arrow-right')}</a>`);
   } catch (error) {
     setHTML(holder, errorState(error.message));
-    holder.querySelector('[data-retry]')?.addEventListener('click', loadQuotes);
+  } finally {
+    holder.removeAttribute('aria-busy');
+  }
+}
+
+async function loadReviews() {
+  const holder = $('[data-account-reviews]');
+  try {
+    const { items } = await api('/api/account/reviews');
+    setHTML(holder, items.length ? html`<ul class="my-reviews">${items.map(reviewRow)}</ul>` : html`<p class="muted">${t('account.noReviews')}</p>`);
+  } catch (error) {
+    setHTML(holder, errorState(error.message));
   } finally {
     holder.removeAttribute('aria-busy');
   }
@@ -80,7 +64,6 @@ function bindProfile(user) {
   const form = $('[data-profile-form]');
   form.elements.namedItem('name').value = user.name || '';
   form.elements.namedItem('phone').value = user.phone || '';
-  form.elements.namedItem('company').value = user.company || '';
   liveValidation(form);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -168,5 +151,6 @@ export default async function accountPage() {
       setBusy(button, false);
     }
   });
-  await loadQuotes();
+  favorites.initSync().finally(loadFavorites);
+  await loadReviews();
 }

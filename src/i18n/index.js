@@ -5,7 +5,10 @@ const uz = require('./locales/uz.json');
 const ru = require('./locales/ru.json');
 const { LANGUAGES } = require('../domain/constants');
 
-const DICTIONARIES = { uz, ru };
+const BASE = { uz, ru };
+/** Effective dictionaries = shipped JSON + admin overrides (see setOverrides). */
+let DICTIONARIES = { uz, ru };
+let overrideMap = new Map();
 const INTL_LOCALES = { uz: 'uz-Latn-UZ', ru: 'ru-RU' };
 /** Namespaces only the admin panel needs; kept out of the public bundle. */
 const ADMIN_NAMESPACES = ['admin', 'audit'];
@@ -75,6 +78,62 @@ function pick(lang, field) {
 
 const bundleCache = new Map();
 
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function setPath(target, key, value) {
+  const parts = key.split('.');
+  let node = target;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    if (!node[parts[i]] || typeof node[parts[i]] !== 'object') return false;
+    node = node[parts[i]];
+  }
+  const last = parts[parts.length - 1];
+  if (typeof node[last] !== 'string') return false;
+  node[last] = value;
+  return true;
+}
+
+/**
+ * Apply admin overrides: rows of { key, uz, ru }. Only existing string keys
+ * can be overridden; empty values fall back to the shipped text.
+ */
+function setOverrides(rows = []) {
+  const next = { uz: deepClone(BASE.uz), ru: deepClone(BASE.ru) };
+  const map = new Map();
+  for (const row of rows) {
+    for (const lang of LANGUAGES) {
+      const value = typeof row[lang] === 'string' ? row[lang].trim() : '';
+      if (value && setPath(next[lang], row.key, value)) map.set(`${lang}:${row.key}`, value);
+    }
+  }
+  DICTIONARIES = next;
+  overrideMap = map;
+  bundleCache.clear();
+}
+
+/** Flat list of every overridable key with its shipped and effective text. */
+function flatKeys(scope = 'all') {
+  const out = [];
+  const walk = (node, prefix) => {
+    for (const [key, value] of Object.entries(node)) {
+      const path = prefix ? `${prefix}.${key}` : key;
+      if (typeof value === 'string') {
+        out.push({
+          key: path,
+          base: { uz: lookup(BASE.uz, path) ?? '', ru: lookup(BASE.ru, path) ?? '' },
+          override: { uz: overrideMap.get(`uz:${path}`) || '', ru: overrideMap.get(`ru:${path}`) || '' }
+        });
+      } else if (value && typeof value === 'object') {
+        walk(value, path);
+      }
+    }
+  };
+  walk(BASE.uz, '');
+  return scope === 'all' ? out : out.filter((row) => row.key.startsWith(`${scope}.`));
+}
+
 /** JSON dictionary served to the browser, with a content hash for caching. */
 function clientBundle(lang, scope = 'public') {
   const cacheKey = `${lang}:${scope}`;
@@ -109,8 +168,8 @@ function missingKeys() {
     }
     return out;
   };
-  const uzKeys = collect(uz, '', new Set());
-  const ruKeys = collect(ru, '', new Set());
+  const uzKeys = collect(BASE.uz, '', new Set());
+  const ruKeys = collect(BASE.ru, '', new Set());
   return {
     missingInRu: [...uzKeys].filter((key) => !ruKeys.has(key)),
     missingInUz: [...ruKeys].filter((key) => !uzKeys.has(key))
@@ -129,5 +188,8 @@ module.exports = {
   pick,
   clientBundle,
   missingKeys,
+  setOverrides,
+  flatKeys,
+  isOverridableKey: (key) => typeof lookup(BASE.uz, key) === 'string' && typeof lookup(BASE.ru, key) === 'string',
   lookup: (lang, key) => lookup(DICTIONARIES[lang], key)
 };

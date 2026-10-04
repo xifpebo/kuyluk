@@ -2,11 +2,11 @@
 
 const { isSupported } = require('../i18n');
 
-const LANG_COOKIE = 'bb_lang';
+const LANG_COOKIE = 'sb_lang';
 
 /**
  * Resolve the request language: ?lang= (also persisted) → X-Lang header →
- * bb_lang cookie → configured default (Uzbek).
+ * sb_lang cookie → configured default (Uzbek).
  */
 function locale(config) {
   return function localeMiddleware(req, res, next) {

@@ -189,7 +189,7 @@ export default async function usersView({ root, query }) {
       body: html`<div class="grid-2">
           ${inputField({ name: 'name', label: t('admin.users.name'), required: true, attributes: { minlength: 2, maxlength: 100, autocomplete: 'off' } })}
           ${inputField({ name: 'email', label: t('admin.users.email'), type: 'email', required: true, attributes: { maxlength: 254, autocomplete: 'off' } })}
-          ${inputField({ name: 'phone', label: t('admin.users.phone'), type: 'tel', optional: true, hint: t('quote.phoneHint'), attributes: { maxlength: 25 } })}
+          ${inputField({ name: 'phone', label: t('admin.users.phone'), type: 'tel', optional: true, hint: t('admin.shops.phoneHint'), attributes: { maxlength: 25 } })}
           ${selectField({ name: 'preferredLang', label: t('admin.users.language'), options: langOptions(), value: 'uz' })}
         </div>
         ${roleCards(meta, 'manager')}

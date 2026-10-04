@@ -16,8 +16,8 @@ import {
 import { badge } from '../../lib/ui.js';
 
 const PATH = '/audit';
-const ENTITIES = ['product', 'category', 'brand', 'supplier', 'quote', 'user', 'upload', 'session'];
-const ENTITY_ROUTES = { product: '#/products/', quote: '#/quotes/' };
+const ENTITIES = ['product', 'category', 'brand', 'shop', 'review', 'banner', 'settings', 'translation', 'user', 'upload', 'session'];
+const ENTITY_ROUTES = { product: '#/products/' };
 
 function entityCell(entry) {
   const entity = entry.entity || {};

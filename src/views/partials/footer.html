@@ -2,11 +2,13 @@
   <div class="hazard-rule" aria-hidden="true"></div>
   <div class="container site-footer__grid">
     <div class="site-footer__about">
-      <a class="brand brand--footer" href="/">
-        <svg class="brand__mark" aria-hidden="true"><use href="#i-logo"></use></svg>
-        <span class="brand__text"><span class="brand__top">Big Bazaar</span><span class="brand__bottom">Build</span></span>
-      </a>
+      <a class="brand brand--footer" href="/">{{> brand}}</a>
       <p>{{t:common.footerAbout}}</p>
+      <div class="site-footer__social">
+        {{#if contact.telegram}}<a class="social-btn social-btn--telegram" href="{{v:contact.telegramHref}}" target="_blank" rel="noopener noreferrer" aria-label="Telegram @{{v:contact.telegram}}"><svg class="icon" aria-hidden="true"><use href="#i-telegram"></use></svg></a>{{/if}}
+        {{#if contact.instagram}}<a class="social-btn social-btn--instagram" href="{{v:contact.instagramHref}}" target="_blank" rel="noopener noreferrer" aria-label="Instagram @{{v:contact.instagram}}"><svg class="icon" aria-hidden="true"><use href="#i-instagram"></use></svg></a>{{/if}}
+        <a class="social-btn" href="{{v:contact.phoneHref}}" aria-label="{{t:contact.call}} {{v:contact.phone}}"><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg></a>
+      </div>
       {{> lang-switch}}
     </div>
     <div>
@@ -18,19 +20,25 @@
     <div>
       <h2 class="site-footer__title">{{t:common.footerCompany}}</h2>
       <ul class="site-footer__links">
+        <li><a href="/about">{{t:nav.about}}</a></li>
         <li><a href="/#how-it-works">{{t:nav.howItWorks}}</a></li>
-        <li><a href="/quote">{{t:quote.title}}</a></li>
-        <li><a href="/suppliers">{{t:nav.suppliers}}</a></li>
-        <li><a href="/account">{{t:nav.account}}</a></li>
-        <li><a href="/admin/login">{{t:auth.staffHint}}</a></li>
+        <li><a href="/shops">{{t:nav.shops}}</a></li>
+        <li><a href="/favorites">{{t:nav.favorites}}</a></li>
+        <li><a href="/sell">{{t:nav.sell}}</a></li>
+        <li><a href="/contact">{{t:nav.contact}}</a></li>
+        <li><a href="/login?next=%2Fseller">{{t:nav.sellerLogin}}</a></li>
       </ul>
     </div>
     <div>
       <h2 class="site-footer__title">{{t:common.footerContacts}}</h2>
       <ul class="site-footer__contacts">
-        <li><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg><a href="{{v:supportPhoneHref}}">{{v:supportPhone}}</a></li>
-        <li><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>{{t:common.footerHours}}</li>
-        <li><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg>{{t:common.footerAddress}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg><span>{{v:contact.ownerName}}<small>{{t:common.footerOwnerRole}}</small></span></li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-phone"></use></svg><a href="{{v:contact.phoneHref}}">{{v:contact.phone}}</a></li>
+        {{#if contact.telegram}}<li><svg class="icon" aria-hidden="true"><use href="#i-telegram"></use></svg><a href="{{v:contact.telegramHref}}" target="_blank" rel="noopener noreferrer">@{{v:contact.telegram}}</a></li>{{/if}}
+        {{#if contact.instagram}}<li><svg class="icon" aria-hidden="true"><use href="#i-instagram"></use></svg><a href="{{v:contact.instagramHref}}" target="_blank" rel="noopener noreferrer">@{{v:contact.instagram}}</a></li>{{/if}}
+        {{#if contact.email}}<li><svg class="icon" aria-hidden="true"><use href="#i-mail"></use></svg><a href="{{v:contact.emailHref}}">{{v:contact.email}}</a></li>{{/if}}
+        <li><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>{{v:contact.hours}}</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg>{{v:contact.address}}</li>
       </ul>
     </div>
   </div>
@@ -39,3 +47,11 @@
     <p class="site-footer__note">{{t:common.footerDemo}}</p>
   </div>
 </footer>
+
+<nav class="tabbar" aria-label="{{t:nav.main}}">
+  <a class="tabbar__item" href="/"{{active:home}}><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg><span>{{t:nav.home}}</span></a>
+  <a class="tabbar__item" href="/catalog"{{active:catalog}}><svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg><span>{{t:nav.catalog}}</span></a>
+  <a class="tabbar__item" href="/shops"{{active:shops}}><svg class="icon" aria-hidden="true"><use href="#i-store"></use></svg><span>{{t:nav.shops}}</span></a>
+  <a class="tabbar__item" href="/favorites"{{active:favorites}}><span class="tabbar__icon"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg><span class="count-badge" data-fav-count hidden>0</span></span><span>{{t:nav.favorites}}</span></a>
+  <a class="tabbar__item" href="/login" data-account-link{{active:account}}><svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg><span data-account-short>{{t:nav.profile}}</span></a>
+</nav>

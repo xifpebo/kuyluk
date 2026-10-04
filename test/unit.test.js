@@ -3,7 +3,8 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const { checkPasswordPolicy, hashPassword, verifyPassword } = require('../src/security/password');
-const { unitPriceFor, lineTotal, checkQuantity } = require('../src/lib/pricing');
+const { Product } = require('../src/models');
+const { can } = require('../src/security/rbac');
 const { cleanText, normalizeForSearch, slugify } = require('../src/lib/text');
 const { s, validate } = require('../src/lib/schema');
 
@@ -32,29 +33,20 @@ describe('password policy', () => {
   });
 });
 
-describe('bulk pricing', () => {
-  const product = {
-    price: 1000,
-    minOrderQty: 2,
-    orderStep: 2,
-    unit: 'bag',
-    priceTiers: [
-      { minQty: 10, price: 900 },
-      { minQty: 50, price: 800 }
-    ]
-  };
-
-  it('applies the best tier', () => {
-    assert.equal(unitPriceFor(product, 4), 1000);
-    assert.equal(unitPriceFor(product, 10), 900);
-    assert.equal(unitPriceFor(product, 60), 800);
-    assert.equal(lineTotal(product, 60), 48000);
+describe('discounts', () => {
+  it('derives the discount from the old price', () => {
+    assert.equal(Product.discountOf(80000, 100000), 20);
+    assert.equal(Product.discountOf(99900, 100000), 0, 'rounds tiny discounts down to none');
+    assert.equal(Product.discountOf(100000, null), 0);
+    assert.equal(Product.discountOf(100000, 90000), 0, 'an old price below the price is not a discount');
   });
+});
 
-  it('checks minimum order and step', () => {
-    assert.ok(checkQuantity(product, 1));
-    assert.ok(checkQuantity(product, 3));
-    assert.equal(checkQuantity(product, 4), null);
+describe('roles', () => {
+  it('never lets a customer or shop owner into the admin panel', () => {
+    assert.ok(!can('user', 'admin:access'));
+    assert.ok(!can('shop_owner', 'admin:access'));
+    assert.ok(!can('shop_owner', 'products:approve'));
   });
 });
 

@@ -8,15 +8,17 @@ const { unsupportedMedia, notFound } = require('../../lib/errors');
 const { IMAGE_TYPES } = require('../../services/uploadService');
 const { createAuthRouter } = require('./auth');
 const { createCatalogRouter } = require('./catalog');
-const { createQuotesRouter } = require('./quotes');
+const { createReviewsRouter } = require('./reviews');
 const { createAccountRouter } = require('./account');
+const { createSellerRouter } = require('./seller');
 const { createAdminRouter } = require('./admin');
+const { createUploadsRouter } = require('./uploads');
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** Bodies on write requests must be JSON (uploads excepted). */
 function requireJsonBody(req, res, next) {
-  if (!WRITE_METHODS.has(req.method) || req.path === '/admin/uploads') return next();
+  if (!WRITE_METHODS.has(req.method) || req.path === '/uploads' || req.path === '/uploads/') return next();
   const hasBody = Number(req.get('content-length') || 0) > 0 || Boolean(req.get('transfer-encoding'));
   if (hasBody && !req.is('application/json')) return next(unsupportedMedia());
   return next();
@@ -29,18 +31,19 @@ function createApiRouter(ctx) {
   const meta = {
     languages: C.LANGUAGES,
     units: C.UNITS,
-    fractionalUnits: C.FRACTIONAL_UNITS,
-    materials: C.MATERIALS,
+    colors: C.COLORS,
     stockStatuses: C.STOCK_STATUSES,
+    productStatuses: C.PRODUCT_STATUSES,
+    shopStatuses: C.SHOP_STATUSES,
+    reviewStatuses: C.REVIEW_STATUSES,
     categoryIcons: C.CATEGORY_ICONS,
-    quoteStatuses: C.QUOTE_STATUSES,
-    quoteTransitions: C.QUOTE_TRANSITIONS,
-    deliveryMethods: C.DELIVERY_METHODS,
-    contactMethods: C.CONTACT_METHODS,
+    contactChannels: C.CONTACT_CHANNELS,
     regions: C.REGIONS,
     paymentMethods: C.PAYMENT_METHODS,
     workingDays: C.WORKING_DAYS,
     productSorts: C.PRODUCT_SORTS,
+    bannerPlacements: C.BANNER_PLACEMENTS,
+    bannerThemes: C.BANNER_THEMES,
     roles: ROLES,
     uploads: { maxBytes: ctx.config.uploads.maxBytes, types: IMAGE_TYPES }
   };
@@ -48,9 +51,11 @@ function createApiRouter(ctx) {
 
   router.use('/auth', createAuthRouter(ctx));
   router.use('/catalog', createCatalogRouter(ctx));
-  router.use('/quotes', createQuotesRouter(ctx));
+  router.use('/reviews', createReviewsRouter(ctx));
   router.use('/account', createAccountRouter(ctx));
+  router.use('/seller', createSellerRouter(ctx));
   router.use('/admin', createAdminRouter(ctx));
+  router.use('/uploads', createUploadsRouter(ctx));
   router.use((req, res, next) => next(notFound()));
   return router;
 }

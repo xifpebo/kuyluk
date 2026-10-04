@@ -4,8 +4,8 @@
  * Server-side sessions in HTTP-only cookies.
  *
  * - 256-bit random token in the cookie; only SHA-256(token) is stored.
- * - Idle (sliding) and absolute timeouts, shorter for staff.
- * - Staff cookies use SameSite=Strict, customer cookies SameSite=Lax.
+ * - Idle (sliding) and absolute timeouts, shorter for staff and shop owners.
+ * - Staff and shop-owner cookies use SameSite=Strict, customer cookies SameSite=Lax.
  * - `tokenVersion` on the user invalidates every session at once
  *   (password change, role change, deactivation, forced logout).
  */
@@ -13,7 +13,7 @@ const crypto = require('node:crypto');
 const mongoose = require('mongoose');
 const Session = require('../models/Session');
 const User = require('../models/User');
-const { isStaffRole, permissionsFor } = require('./rbac');
+const { isStaffRole, isSellerRole, permissionsFor } = require('./rbac');
 const { cookieName, baseOptions } = require('./cookies');
 const { truncate } = require('../lib/text');
 const { logger } = require('../logger');
@@ -26,13 +26,20 @@ function hashToken(token) {
 }
 
 function createSessionManager(config) {
-  const name = cookieName(config, 'bb_sid');
+  const name = cookieName(config, 'sb_sid');
 
   function lifetimes(role) {
     if (isStaffRole(role)) {
       return {
         idleMs: config.session.staffIdleMinutes * 60 * 1000,
         absoluteMs: config.session.staffAbsoluteHours * 60 * 60 * 1000,
+        sameSite: 'strict'
+      };
+    }
+    if (isSellerRole(role)) {
+      return {
+        idleMs: config.session.sellerIdleHours * 60 * 60 * 1000,
+        absoluteMs: config.session.sellerAbsoluteDays * 24 * 60 * 60 * 1000,
         sameSite: 'strict'
       };
     }
@@ -98,6 +105,7 @@ function createSessionManager(config) {
       userId: String(user._id),
       role: user.role,
       isStaff: isStaffRole(user.role),
+      isSeller: isSellerRole(user.role),
       permissions: permissionsFor(user.role),
       mustChangePassword: Boolean(user.mustChangePassword),
       idleSeconds: Math.round(lifetimes(user.role).idleMs / 1000),

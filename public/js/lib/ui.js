@@ -62,6 +62,37 @@ export function confirmDialog({ title = t('admin.common.confirmTitle'), text = '
   });
 }
 
+/**
+ * Confirmation with an optional (or required) note, e.g. a rejection
+ * reason. Resolves to the trimmed note, or null when cancelled.
+ */
+export function noteDialog({ title, text = '', label = '', confirmLabel = t('common.confirm'), danger = false, required = false, value = '' } = {}) {
+  return new Promise((resolve) => {
+    const dialog = buildDialog({
+      title,
+      danger,
+      body: html`<form method="dialog">
+        <div class="modal__body">
+          <h2 class="modal__title">${title}</h2>
+          ${text ? html`<p class="modal__text">${text}</p>` : ''}
+          <label class="field">
+            <span class="field__label">${label}${required ? '' : html` <span class="field__optional">(${t('common.optional')})</span>`}</span>
+            <textarea class="control" rows="3" maxlength="500" data-note ${required ? 'required' : ''}>${value}</textarea>
+          </label>
+        </div>
+        <div class="modal__foot">
+          <button class="btn btn-ghost" value="cancel" type="submit" formnovalidate>${t('common.cancel')}</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-accent'}" value="ok" type="submit" data-confirm>${confirmLabel}</button>
+        </div>
+      </form>`
+    });
+    const note = dialog.querySelector('[data-note]');
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok' ? note.value.trim() : null));
+    dialog.showModal();
+    note.focus();
+  });
+}
+
 /** Show a one-time secret (e.g. a temporary password) with a copy button. */
 export function secretDialog({ title, text, secret }) {
   return new Promise((resolve) => {

@@ -25,6 +25,7 @@ async function main() {
 
   fs.mkdirSync(config.uploads.dir, { recursive: true });
   await connectDatabase(config.mongoUri);
+  await require('./src/services/contentService').prepareContent(config);
 
   const app = createApp({ config });
   const server = app.listen(config.port, config.host, () => {

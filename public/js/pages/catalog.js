@@ -1,16 +1,17 @@
 /**
- * Catalog: faceted filters (brand, material, grade, availability, unit,
- * supplier, thickness, diameter, price, bulk pricing), search, sorting and
- * pagination, all mirrored in the URL.
+ * Catalog: category tree, faceted filters (availability, brand, shop,
+ * colour, price, discounts), search, sorting and pagination — all mirrored
+ * in the URL so every view can be shared.
  */
 import { $, $$, html, setHTML, icon, on, debounce, readBoot } from '../lib/dom.js';
-import { t, tn, loc, fmtNumber, unitName } from '../lib/i18n.js';
+import { t, tn, loc, fmtNumber } from '../lib/i18n.js';
 import { api } from '../lib/api.js';
 import { productGrid } from '../lib/product-card.js';
 import { drawer, emptyState, errorState, pagination, skeletonCards } from '../lib/ui.js';
 import { loadCategories } from '../lib/chrome.js';
+import { swatch, colorName } from '../lib/format.js';
 
-const MULTI = ['stock', 'brand', 'material', 'grade', 'unit', 'supplier', 'thickness', 'diameter'];
+const MULTI = ['stock', 'brand', 'shop', 'color'];
 const PAGE_SIZE = 24;
 const FACET_PREVIEW = 6;
 
@@ -29,7 +30,7 @@ function readState() {
     page: Math.max(1, Number.parseInt(params.get('page'), 10) || 1),
     priceMin: params.get('priceMin') || '',
     priceMax: params.get('priceMax') || '',
-    bulk: params.get('bulk') === 'true',
+    discount: params.get('discount') === 'true',
     featured: params.get('featured') === 'true'
   };
   for (const key of MULTI) {
@@ -45,7 +46,7 @@ function toParams(source = state) {
   for (const key of MULTI) if (source[key].length) params.set(key, source[key].join(','));
   if (source.priceMin) params.set('priceMin', source.priceMin);
   if (source.priceMax) params.set('priceMax', source.priceMax);
-  if (source.bulk) params.set('bulk', 'true');
+  if (source.discount) params.set('discount', 'true');
   if (source.featured) params.set('featured', 'true');
   if (source.sort && source.sort !== 'recommended') params.set('sort', source.sort);
   if (source.page > 1) params.set('page', String(source.page));
@@ -61,7 +62,7 @@ function urlFor(patch) {
 function activeFilterCount() {
   let total = MULTI.reduce((sum, key) => sum + state[key].length, 0);
   if (state.priceMin || state.priceMax) total += 1;
-  if (state.bulk) total += 1;
+  if (state.discount) total += 1;
   if (state.featured) total += 1;
   if (state.category) total += 1;
   return total;
@@ -72,20 +73,12 @@ function valueLabel(key, value, facets) {
   switch (key) {
     case 'stock':
       return t(`stock.${value}`);
-    case 'material':
-      return t(`materials.${value}`);
-    case 'unit':
-      return unitName(value);
-    case 'thickness':
-      return `${fmtNumber(value)} ${t('common.mm')}`;
-    case 'diameter':
-      return `Ø${fmtNumber(value)} ${t('common.mm')}`;
+    case 'color':
+      return colorName(value);
     case 'brand':
       return facets?.brands?.find((b) => b.slug === value)?.name || value;
-    case 'supplier': {
-      const supplier = facets?.suppliers?.find((s) => s.slug === value);
-      return supplier ? `${supplier.stallNumber} · ${supplier.name}` : value;
-    }
+    case 'shop':
+      return facets?.shops?.find((s) => s.slug === value)?.name || value;
     default:
       return value;
   }
@@ -94,24 +87,16 @@ function valueLabel(key, value, facets) {
 const GROUP_TITLES = {
   stock: 'catalog.availability',
   brand: 'catalog.brand',
-  material: 'catalog.material',
-  grade: 'catalog.grade',
-  unit: 'catalog.unit',
-  supplier: 'catalog.supplier',
-  thickness: 'catalog.thickness',
-  diameter: 'catalog.diameter'
+  shop: 'catalog.shop',
+  color: 'catalog.color'
 };
 
 function facetOptions(key, facets) {
   const source = {
     stock: facets.stock,
     brand: facets.brands.map((b) => ({ value: b.slug, count: b.count })),
-    material: facets.materials,
-    grade: facets.grades,
-    unit: facets.units,
-    supplier: facets.suppliers.map((s) => ({ value: s.slug, count: s.count })),
-    thickness: facets.thickness.map((row) => ({ value: String(row.value), count: row.count })),
-    diameter: facets.diameter.map((row) => ({ value: String(row.value), count: row.count }))
+    shop: facets.shops.map((s) => ({ value: s.slug, count: s.count })),
+    color: facets.colors
   }[key] || [];
   const options = source.map((row) => ({ value: String(row.value), count: row.count }));
   if (key === 'stock') {
@@ -124,18 +109,38 @@ function facetOptions(key, facets) {
   return options;
 }
 
+/** Flat lookup over the category tree. */
+function findCategory(slug) {
+  for (const parent of categories) {
+    if (parent.slug === slug) return { category: parent, parent: null };
+    const child = parent.children?.find((c) => c.slug === slug);
+    if (child) return { category: child, parent };
+  }
+  return null;
+}
+
 /* ---------------------------------------------------------- filters */
 function categoryGroup() {
   const current = state.category;
+  const found = current ? findCategory(current) : null;
+  const activeParent = found ? found.parent || found.category : null;
   return html`<details class="filter-group" open>
     <summary class="filter-group__title">${t('catalog.category')}${icon('chevron-down')}</summary>
     <ul class="category-links">
       <li><a href="${urlFor({ category: '', page: 1 })}" data-category="" ${!current ? html`aria-current="true"` : ''}>
         ${icon('grid')}<span>${t('catalog.allCategories')}</span></a></li>
-      ${categories.map(
-        (c) => html`<li><a href="${urlFor({ category: c.slug, page: 1 })}" data-category="${c.slug}" ${c.slug === current ? html`aria-current="true"` : ''}>
-          ${icon(c.icon)}<span>${loc(c.name)}</span><span class="facet__count">${c.productCount}</span></a></li>`
-      )}
+      ${categories.map((c) => {
+        const open = activeParent && activeParent.slug === c.slug;
+        return html`<li class="${open ? 'is-open' : ''}"><a href="${urlFor({ category: c.slug, page: 1 })}" data-category="${c.slug}" ${c.slug === current ? html`aria-current="true"` : ''}>
+          ${icon(c.icon)}<span>${loc(c.name)}</span><span class="facet__count">${c.productCount}</span></a>
+          ${open && c.children?.length
+            ? html`<ul class="category-links__sub">${c.children.filter((sub) => sub.productCount > 0).map(
+                (sub) => html`<li><a href="${urlFor({ category: sub.slug, page: 1 })}" data-category="${sub.slug}" ${sub.slug === current ? html`aria-current="true"` : ''}>
+                  <span>${loc(sub.name)}</span><span class="facet__count">${sub.productCount}</span></a></li>`
+              )}</ul>`
+            : ''}
+        </li>`;
+      })}
     </ul>
   </details>`;
 }
@@ -143,7 +148,7 @@ function categoryGroup() {
 function checkboxGroup(key, facets) {
   const options = facetOptions(key, facets);
   if (!options.length) return '';
-  const open = state[key].length > 0 || ['stock', 'brand', 'material'].includes(key);
+  const open = state[key].length > 0 || ['stock', 'brand', 'shop'].includes(key);
   const showAll = expanded.has(key) || options.length <= FACET_PREVIEW + 1;
   const visible = showAll ? options : options.slice(0, FACET_PREVIEW);
   return html`<details class="filter-group" ${open ? 'open' : ''} data-group="${key}">
@@ -154,7 +159,7 @@ function checkboxGroup(key, facets) {
         return html`<label class="facet ${option.count === 0 && !checked ? 'is-empty' : ''}">
           <input type="checkbox" data-facet="${key}" value="${option.value}" ${checked ? 'checked' : ''}>
           <span class="checkbox__box" aria-hidden="true">${icon('check')}</span>
-          <span class="facet__label">${valueLabel(key, option.value, facets)}</span>
+          ${key === 'color' ? swatch(option.value) : ''}<span class="facet__label">${valueLabel(key, option.value, facets)}</span>
           <span class="facet__count">${option.count}</span>
         </label>`;
       })}
@@ -180,8 +185,8 @@ function priceGroup(facets) {
 
 function togglesGroup() {
   return html`<div class="filter-group">
-    <label class="toggle-row"><span>${t('catalog.bulkOnly')}</span>
-      <span class="switch"><input type="checkbox" data-toggle="bulk" ${state.bulk ? 'checked' : ''}><span class="switch__track"></span></span>
+    <label class="toggle-row"><span>${t('catalog.discountOnly')}</span>
+      <span class="switch"><input type="checkbox" data-toggle="discount" ${state.discount ? 'checked' : ''}><span class="switch__track"></span></span>
     </label>
     <label class="toggle-row"><span>${t('catalog.featuredOnly')}</span>
       <span class="switch"><input type="checkbox" data-toggle="featured" ${state.featured ? 'checked' : ''}><span class="switch__track"></span></span>
@@ -195,16 +200,12 @@ function renderFilters(facets) {
   setHTML(
     holder,
     html`${categoryGroup()}
+      ${togglesGroup()}
+      ${priceGroup(facets)}
       ${checkboxGroup('stock', facets)}
       ${checkboxGroup('brand', facets)}
-      ${checkboxGroup('material', facets)}
-      ${checkboxGroup('grade', facets)}
-      ${checkboxGroup('thickness', facets)}
-      ${checkboxGroup('diameter', facets)}
-      ${checkboxGroup('unit', facets)}
-      ${checkboxGroup('supplier', facets)}
-      ${priceGroup(facets)}
-      ${togglesGroup()}`
+      ${checkboxGroup('shop', facets)}
+      ${checkboxGroup('color', facets)}`
   );
   for (const [key, open] of openState) {
     const el = holder.querySelector(`details[data-group="${key}"]`);
@@ -221,8 +222,8 @@ function renderChips(facets) {
       <button class="chip__remove" type="button" data-remove='${JSON.stringify(patch)}' aria-label="${t('catalog.removeFilter', { name: value })}">${icon('close')}</button></span>`;
   if (state.q) chips.push(chip(t('common.search'), state.q, { q: '' }));
   if (state.category) {
-    const category = categories.find((c) => c.slug === state.category);
-    chips.push(chip(t('catalog.category'), category ? loc(category.name) : state.category, { category: '' }));
+    const found = findCategory(state.category);
+    chips.push(chip(t('catalog.category'), found ? loc(found.category.name) : state.category, { category: '' }));
   }
   for (const key of MULTI) {
     for (const value of state[key]) {
@@ -233,7 +234,7 @@ function renderChips(facets) {
     const text = `${state.priceMin ? fmtNumber(state.priceMin) : '0'} – ${state.priceMax ? fmtNumber(state.priceMax) : '∞'}`;
     chips.push(chip(t('catalog.price'), text, { priceMin: '', priceMax: '' }));
   }
-  if (state.bulk) chips.push(chip(t('catalog.bulkBadge'), t('common.yes'), { bulk: false }));
+  if (state.discount) chips.push(chip(t('catalog.discountOnly'), t('common.yes'), { discount: false }));
   if (state.featured) chips.push(chip(t('catalog.featuredOnly'), t('common.yes'), { featured: false }));
   if (chips.length > 1) {
     chips.push(html`<button class="chip chip--clear" type="button" data-clear-all>${t('catalog.clearAll')}</button>`);
@@ -242,7 +243,8 @@ function renderChips(facets) {
 }
 
 function renderHeading() {
-  const category = categories.find((c) => c.slug === state.category);
+  const found = state.category ? findCategory(state.category) : null;
+  const category = found?.category;
   const title = $('[data-catalog-title]');
   const lead = $('[data-catalog-lead]');
   const crumb = $('[data-crumb-current]');
@@ -254,10 +256,32 @@ function renderHeading() {
   lead.hidden = !leadText;
   crumb.textContent = category ? loc(category.name) : '';
   crumb.hidden = !category;
+  const parentCrumb = $('[data-crumb-parent]');
+  if (parentCrumb) {
+    parentCrumb.hidden = !found?.parent;
+    if (found?.parent) setHTML(parentCrumb, html`<a href="${urlFor({ category: found.parent.slug, page: 1, q: '' })}">${loc(found.parent.name)}</a>`);
+  }
+  renderSubnav(found);
   const siteName = readBoot().siteName || '';
   document.title = `${state.q ? t('catalog.searchResultsFor', { q: state.q }) : heading} — ${siteName}`;
   const count = activeFilterCount();
   $('[data-filters-label]').textContent = count ? t('catalog.filtersCount', { count }) : t('catalog.filters');
+}
+
+/** Quick subcategory chips under the heading of a top-level category. */
+function renderSubnav(found) {
+  const holder = $('[data-subnav]');
+  if (!holder) return;
+  const parent = found ? found.parent || found.category : null;
+  const children = parent?.children?.filter((c) => c.productCount > 0) || [];
+  holder.hidden = !children.length;
+  setHTML(
+    holder,
+    html`${children.map(
+      (c) => html`<a class="subnav__item" href="${urlFor({ category: c.slug, page: 1 })}" data-category="${c.slug}" ${c.slug === state.category ? html`aria-current="true"` : ''}>
+        ${c.image ? html`<img src="${c.image}" alt="" width="40" height="40" loading="lazy">` : icon(c.icon)}<span>${loc(c.name)}</span></a>`
+    )}`
+  );
 }
 
 function renderResults(result) {
@@ -354,7 +378,7 @@ function bindEvents(filterDrawer) {
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
-  on(form, 'click', '[data-category]', (event, link) => {
+  on(document, 'click', '[data-filters] [data-category], [data-subnav] [data-category]', (event, link) => {
     event.preventDefault();
     update({ category: link.dataset.category });
   });
@@ -366,14 +390,14 @@ function bindEvents(filterDrawer) {
   const chips = $('[data-active-filters]');
   on(chips, 'click', '[data-remove]', (event, button) => update(JSON.parse(button.dataset.remove)));
   on(chips, 'click', '[data-clear-all]', () => {
-    const reset = { q: '', category: '', priceMin: '', priceMax: '', bulk: false, featured: false };
+    const reset = { q: '', category: '', priceMin: '', priceMax: '', discount: false, featured: false };
     for (const key of MULTI) reset[key] = [];
     update(reset);
   });
 
   $('[data-sort]').addEventListener('change', (event) => update({ sort: event.target.value }));
   $('[data-filters-reset]').addEventListener('click', () => {
-    const reset = { q: '', priceMin: '', priceMax: '', bulk: false, featured: false };
+    const reset = { q: '', priceMin: '', priceMax: '', discount: false, featured: false };
     for (const key of MULTI) reset[key] = [];
     update(reset);
   });

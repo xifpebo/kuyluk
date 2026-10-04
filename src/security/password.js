@@ -90,7 +90,7 @@ const COMMON = new Set([
   'administrator', 'iloveyou', 'monkey', 'dragon', 'football', 'baseball', 'master', 'sunshine', 'princess',
   'superman', 'batman', 'trustno', 'starwars', 'whatever', 'freedom', 'shadow', 'michael', 'secret',
   'changeme', 'default', 'login', 'access', 'root', 'toor', 'test', 'tester', 'guest', 'user', 'manager',
-  'superadmin', 'bigbazaar', 'bazaar', 'build', 'building', 'stroy', 'qurilish', 'toshkent', 'tashkent',
+  'superadmin', 'stroybazar', 'bigbazaar', 'bazaar', 'build', 'building', 'stroy', 'qurilish', 'toshkent', 'tashkent',
   'uzbekistan', 'ozbekiston', 'parol', 'parol123', 'пароль', 'йцукен', 'qazwsx', 'abcdef', 'abcdefgh',
   'abc', 'company', 'summer', 'winter', 'spring', 'autumn', 'january', 'december', 'ninja', 'mustang',
   'jordan', 'hunter', 'ranger', 'hello', 'charlie', 'donald', 'soccer', 'hockey', 'killer', 'pepper',
@@ -99,7 +99,7 @@ const COMMON = new Set([
 ]);
 
 // Context-specific words that must not appear anywhere in a password.
-const CONTEXT_WORDS = ['bigbazaar', 'bazaar', 'bazar', 'qurilish', 'password', 'parol', 'пароль', 'admin', 'qwerty', 'йцукен'];
+const CONTEXT_WORDS = ['stroybazar', 'bigbazaar', 'bazaar', 'bazar', 'qurilish', 'password', 'parol', 'пароль', 'admin', 'qwerty', 'йцукен'];
 
 const SEQUENCES = ['0123456789', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm', '1q2w3e4r5t'];
 

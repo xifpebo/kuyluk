@@ -2,17 +2,9 @@
 
 const mongoose = require('mongoose');
 const { localizedField } = require('./shared');
-const { UNITS, MATERIALS, STOCK_STATUSES, STOCK_RANK, CURRENCIES } = require('../domain/constants');
+const { UNITS, COLORS, STOCK_STATUSES, STOCK_RANK, CURRENCIES, PRODUCT_STATUSES } = require('../domain/constants');
 
 const { ObjectId } = mongoose.Schema.Types;
-
-const priceTierSchema = new mongoose.Schema(
-  {
-    minQty: { type: Number, required: true, min: 0 },
-    price: { type: Number, required: true, min: 0 }
-  },
-  { _id: false }
-);
 
 const specSchema = new mongoose.Schema(
   {
@@ -22,6 +14,10 @@ const specSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/**
+ * A product listed by a shop. It becomes publicly visible only when
+ * status = approved, isActive = true and its shop is approved.
+ */
 const productSchema = new mongoose.Schema(
   {
     sku: { type: String, required: true, unique: true, uppercase: true, trim: true, maxlength: 32 },
@@ -30,25 +26,14 @@ const productSchema = new mongoose.Schema(
     description: { type: localizedField({ maxlength: 4000 }), default: () => ({}) },
     category: { type: ObjectId, ref: 'Category', required: true, index: true },
     brand: { type: ObjectId, ref: 'Brand', default: null, index: true },
-    supplier: { type: ObjectId, ref: 'Supplier', required: true, index: true },
-    materialType: { type: String, enum: MATERIALS, default: 'other', index: true },
-    grade: { type: String, trim: true, maxlength: 40, default: '' },
-    unit: { type: String, enum: UNITS, required: true },
+    shop: { type: ObjectId, ref: 'Shop', required: true, index: true },
+    unit: { type: String, enum: UNITS, default: 'piece' },
     price: { type: Number, required: true, min: 0 },
     oldPrice: { type: Number, min: 0, default: null },
+    discountPercent: { type: Number, default: 0, min: 0, max: 100 },
     currency: { type: String, enum: CURRENCIES, default: 'UZS' },
-    priceTiers: { type: [priceTierSchema], default: [] },
-    minOrderQty: { type: Number, default: 1, min: 0.001 },
-    orderStep: { type: Number, default: 1, min: 0.001 },
-    unitsPerPallet: { type: Number, default: null, min: 0 },
-    dimensions: {
-      lengthMm: { type: Number, default: null, min: 0 },
-      widthMm: { type: Number, default: null, min: 0 },
-      heightMm: { type: Number, default: null, min: 0 },
-      thicknessMm: { type: Number, default: null, min: 0 },
-      diameterMm: { type: Number, default: null, min: 0 }
-    },
-    weightKg: { type: Number, default: null, min: 0 },
+    colors: { type: [{ type: String, enum: COLORS }], default: [] },
+    sizes: { type: [{ type: String, trim: true, maxlength: 40 }], default: [] },
     specs: { type: [specSchema], default: [] },
     stock: {
       status: { type: String, enum: STOCK_STATUSES, default: 'in_stock' },
@@ -57,9 +42,17 @@ const productSchema = new mongoose.Schema(
     stockRank: { type: Number, default: 0 },
     leadTimeDays: { type: Number, default: 0, min: 0, max: 365 },
     images: { type: [{ type: String, trim: true, maxlength: 1000 }], default: [] },
+    status: { type: String, enum: PRODUCT_STATUSES, default: 'pending', index: true },
+    moderationNote: { type: String, trim: true, maxlength: 500, default: '' },
+    submittedAt: { type: Date, default: null },
+    approvedAt: { type: Date, default: null },
+    approvedBy: { type: ObjectId, ref: 'User', default: null },
     isFeatured: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
-    hasBulkPricing: { type: Boolean, default: false },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    reviewCount: { type: Number, default: 0, min: 0 },
+    viewCount: { type: Number, default: 0, min: 0 },
+    contactCount: { type: Number, default: 0, min: 0 },
     searchText: { type: String, default: '', select: false },
     createdBy: { type: ObjectId, ref: 'User', default: null },
     updatedBy: { type: ObjectId, ref: 'User', default: null }
@@ -67,16 +60,20 @@ const productSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false, minimize: false }
 );
 
-productSchema.index({ isActive: 1, category: 1, stockRank: 1 });
-productSchema.index({ isActive: 1, isFeatured: -1, stockRank: 1, createdAt: -1 });
-productSchema.index({ isActive: 1, price: 1 });
-productSchema.index({ grade: 1 });
-productSchema.index({ 'dimensions.thicknessMm': 1 });
-productSchema.index({ 'dimensions.diameterMm': 1 });
+productSchema.index({ status: 1, isActive: 1, category: 1, stockRank: 1 });
+productSchema.index({ status: 1, isActive: 1, isFeatured: -1, createdAt: -1 });
+productSchema.index({ status: 1, isActive: 1, price: 1 });
+productSchema.index({ status: 1, isActive: 1, discountPercent: -1 });
+productSchema.index({ shop: 1, status: 1 });
+
+function discountOf(price, oldPrice) {
+  if (!oldPrice || !price || oldPrice <= price) return 0;
+  return Math.round((1 - price / oldPrice) * 100);
+}
 
 productSchema.pre('validate', function derivedFields(next) {
   this.stockRank = STOCK_RANK[this.stock?.status] ?? 0;
-  this.hasBulkPricing = Array.isArray(this.priceTiers) && this.priceTiers.length > 0;
+  this.discountPercent = discountOf(this.price, this.oldPrice);
   next();
 });
 
@@ -89,5 +86,7 @@ productSchema.set('toJSON', {
     return ret;
   }
 });
+
+productSchema.statics.discountOf = discountOf;
 
 module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);

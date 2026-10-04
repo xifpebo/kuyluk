@@ -6,11 +6,15 @@ const AuditLog = require('./AuditLog');
 const RateLimitHit = require('./RateLimitHit');
 const Category = require('./Category');
 const Brand = require('./Brand');
-const Supplier = require('./Supplier');
+const Shop = require('./Shop');
 const Product = require('./Product');
-const QuoteRequest = require('./QuoteRequest');
+const Review = require('./Review');
+const Banner = require('./Banner');
+const Setting = require('./Setting');
+const Translation = require('./Translation');
+const ShopStat = require('./ShopStat');
 
-const models = { User, Session, AuditLog, RateLimitHit, Category, Brand, Supplier, Product, QuoteRequest };
+const models = { User, Session, AuditLog, RateLimitHit, Category, Brand, Shop, Product, Review, Banner, Setting, Translation, ShopStat };
 
 /** Ensure collections and indexes exist (unique constraints must be in place before traffic). */
 async function initModels() {

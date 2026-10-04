@@ -1,0 +1,42 @@
+<div class="page-head blueprint">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="{{t:common.breadcrumb}}">
+      <ol>
+        <li><a href="/">{{t:common.home}}</a></li>
+        <li aria-current="page">{{t:shops.title}}</li>
+      </ol>
+    </nav>
+    <h1 class="page-title display">{{t:shops.title}}</h1>
+    <p class="page-lead">{{t:shops.lead}}</p>
+    <form class="toolbar-search" data-shop-filter role="search">
+      <div class="input-icon">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+        <label class="visually-hidden" for="shop-q">{{t:shops.searchLabel}}</label>
+        <input class="control" id="shop-q" name="q" type="search" maxlength="60" autocomplete="off" placeholder="{{t:shops.searchPlaceholder}}">
+      </div>
+      <label class="visually-hidden" for="shop-category">{{t:catalog.category}}</label>
+      <select class="control" id="shop-category" name="category" data-shop-category>
+        <option value="">{{t:catalog.allCategories}}</option>
+      </select>
+      <label class="visually-hidden" for="shop-sort">{{t:catalog.sort}}</label>
+      <select class="control" id="shop-sort" name="sort">
+        <option value="recommended">{{t:shops.sortRecommended}}</option>
+        <option value="rating">{{t:shops.sortRating}}</option>
+        <option value="products">{{t:shops.sortProducts}}</option>
+        <option value="name">{{t:shops.sortName}}</option>
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="container section section--tight">
+  <p class="catalog__count" aria-live="polite" data-shop-count></p>
+  <div class="shop-grid" data-shop-grid aria-busy="true"></div>
+  <div class="cta-band cta-band--slim">
+    <div class="cta-band__copy">
+      <h2 class="cta-band__title display">{{t:home.ctaTitle}}</h2>
+      <p>{{t:home.ctaText}}</p>
+    </div>
+    <a class="btn btn-dark btn-lg" href="/sell">{{t:home.ctaButton}}<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+  </div>
+</div>

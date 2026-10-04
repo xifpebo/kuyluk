@@ -16,14 +16,20 @@ const PASSWORDS = {
   customer: 'Qizil&Tosh2026*'
 };
 
+/** Demo shop owners created by the seed (src/seed/data/shops.js). */
+const OWNERS = {
+  aqualux: { email: 'aqualux@stroybazar.uz', password: 'Vanna#Demo2026', slug: 'aqualux-santexnika' },
+  keramika: { email: 'keramika@stroybazar.uz', password: 'Kafel#Demo2026', slug: 'keramika-plaza' }
+};
+
 async function startTestApp({ env = {} } = {}) {
   const mongo = await startMiniMongo();
   Object.assign(process.env, {
     NODE_ENV: 'test',
-    MONGODB_URI: mongo.uriFor(`bbb-test-${crypto.randomBytes(4).toString('hex')}`),
+    MONGODB_URI: mongo.uriFor(`sb-test-${crypto.randomBytes(4).toString('hex')}`),
     APP_SECRET: crypto.randomBytes(32).toString('hex'),
     APP_ORIGIN: 'http://127.0.0.1',
-    UPLOAD_DIR: path.join(os.tmpdir(), `bbb-test-uploads-${process.pid}`),
+    UPLOAD_DIR: path.join(os.tmpdir(), `sb-test-uploads-${process.pid}`),
     RATE_LIMIT_STORE: 'memory',
     FONT_PROVIDER: 'system',
     LOG_LEVEL: 'silent',
@@ -45,12 +51,11 @@ async function boot(mongo) {
   setLogger(createLogger({ level: 'silent' }));
   const { connectDatabase, disconnectDatabase } = require('../src/db');
   const { createApp } = require('../src/app');
-  const { seedCatalog, seedDemoQuotes } = require('../src/seed');
+  const { seedCatalog } = require('../src/seed');
   const { createUser } = require('../src/services/authService');
 
   await connectDatabase(config.mongoUri);
-  await seedCatalog({ log: () => {} });
-  await seedDemoQuotes({ log: () => {} });
+  await seedCatalog({ withAccounts: true, log: () => {} });
   const users = {
     admin: await createUser({ email: 'admin@test.local', name: 'Test Admin', role: 'superadmin', password: PASSWORDS.admin }),
     manager: await createUser({ email: 'manager@test.local', name: 'Test Manager', role: 'manager', password: PASSWORDS.manager }),
@@ -132,4 +137,4 @@ function createClient(baseUrl, { lang = 'uz' } = {}) {
   };
 }
 
-module.exports = { startTestApp, PASSWORDS };
+module.exports = { startTestApp, PASSWORDS, OWNERS };

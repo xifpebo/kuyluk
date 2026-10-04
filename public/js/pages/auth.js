@@ -47,7 +47,7 @@ export function loginPage() {
       const result = await api(endpoint, { method: 'POST', body: { email, password } });
       applySession(result);
       const fallback = result.redirect || (surface === 'admin' ? '/admin' : '/account');
-      const target = surface === 'admin' ? safeNext(boot.next, '/admin') : result.isStaff ? '/admin' : safeNext(boot.next, fallback);
+      const target = surface === 'admin' ? safeNext(boot.next, '/admin') : result.isStaff ? '/admin' : boot.next === '/seller' && !result.isSeller ? fallback : safeNext(boot.next, fallback);
       window.location.assign(target);
     } catch (error) {
       form.elements.namedItem('password').value = '';
@@ -79,6 +79,42 @@ export function registerPage() {
       const result = await api('/api/auth/register', { method: 'POST', body: values });
       applySession(result);
       window.location.assign(result.redirect || '/account');
+    } catch (error) {
+      showErrors(form, error.fields || {}, error.message);
+      setBusy(submit, false);
+    }
+  });
+}
+
+/** "Open a shop": owner account + shop application (pending admin approval). */
+export function sellPage() {
+  const form = $('[data-sell-form]');
+  if (!form) return;
+  const select = form.querySelector('[data-regions]');
+  const regions = ['tashkent_city', 'tashkent_region', 'samarkand', 'bukhara', 'andijan', 'fergana', 'namangan', 'kashkadarya', 'surkhandarya', 'khorezm', 'navoi', 'jizzakh', 'syrdarya', 'karakalpakstan'];
+  for (const region of regions) {
+    const option = document.createElement('option');
+    option.value = region;
+    option.textContent = t(`regions.${region}`);
+    select.append(option);
+  }
+  liveValidation(form);
+  bindPasswordToggles(form);
+  bindPasswordMeters(form);
+  const submit = form.querySelector('[type="submit"]');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearErrors(form);
+    const fields = validateForm(form);
+    if (Object.keys(fields).length) {
+      showErrors(form, fields, t('errors.validation_failed'));
+      return;
+    }
+    setBusy(submit, true);
+    try {
+      const result = await api('/api/auth/register-shop', { method: 'POST', body: formValues(form) });
+      applySession(result);
+      window.location.assign('/seller#/dashboard');
     } catch (error) {
       showErrors(form, error.fields || {}, error.message);
       setBusy(submit, false);

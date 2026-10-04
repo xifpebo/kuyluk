@@ -4,11 +4,13 @@
       <ol>
         <li><a href="/">{{t:common.home}}</a></li>
         <li><a href="/catalog" data-crumb-catalog>{{t:nav.catalog}}</a></li>
+        <li data-crumb-parent hidden></li>
         <li aria-current="page" data-crumb-current hidden></li>
       </ol>
     </nav>
     <h1 class="page-title display" data-catalog-title>{{t:catalog.title}}</h1>
     <p class="page-lead" data-catalog-lead hidden></p>
+    <nav class="subnav" data-subnav hidden aria-label="{{t:catalog.subcategories}}"></nav>
   </div>
 </div>
 
@@ -54,9 +56,12 @@
           <span class="select-inline__label">{{t:catalog.sort}}</span>
           <select class="control control--compact" data-sort>
             <option value="recommended">{{t:catalog.sortOptions.recommended}}</option>
+            <option value="popular">{{t:catalog.sortOptions.popular}}</option>
             <option value="newest">{{t:catalog.sortOptions.newest}}</option>
             <option value="price_asc">{{t:catalog.sortOptions.price_asc}}</option>
             <option value="price_desc">{{t:catalog.sortOptions.price_desc}}</option>
+            <option value="discount">{{t:catalog.sortOptions.discount}}</option>
+            <option value="rating">{{t:catalog.sortOptions.rating}}</option>
             <option value="name">{{t:catalog.sortOptions.name}}</option>
           </select>
         </label>

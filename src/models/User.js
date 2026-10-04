@@ -23,6 +23,8 @@ const userSchema = new mongoose.Schema(
     lastLoginIp: { type: String, default: '' },
     tokenVersion: { type: Number, default: 0 },
     preferredLang: { type: String, enum: LANGUAGES, default: 'uz' },
+    favorites: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
+    favoriteShops: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Shop' }], default: [] },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
   },
   { timestamps: true }

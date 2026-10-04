@@ -9,12 +9,18 @@ receipt within 3 working days.
 
 ## Supported versions
 
-Only the latest `2.x` release receives security fixes.
+Only the latest `3.x` release receives security fixes.
 
 ## Operational guidance
 
 - **Secrets:** `APP_SECRET` signs CSRF tokens. Rotating it invalidates every CSRF token,
   so users simply reload the page. Never commit `.env`.
+- **Demo accounts:** `npm run seed -- --demo-accounts` and `npm run demo` create accounts with
+  published test passwords (see README). The seed script refuses this in production; never
+  copy demo data with accounts into a live database.
+- **Shop owners:** they only reach `/seller` and `/api/seller`, where every query is scoped to
+  their own shop on the server. Their new products and content changes are moderated before
+  they become public; suspending a shop hides it and all its products immediately.
 - **Accounts:** keep the number of super-admins small. Give day-to-day staff the Manager role.
   Deactivate accounts instead of sharing them; deactivation and role changes end all sessions
   of that user immediately.
@@ -26,6 +32,8 @@ Only the latest `2.x` release receives security fixes.
 - **Audit log:** entries are append-only at the application level. For regulatory needs, also
   restrict `update` and `remove` on the `auditlogs` collection at the MongoDB role level and ship
   the application logs to external storage.
+- **Telegram notifications:** `TELEGRAM_BOT_TOKEN` is used only on the server; messages
+  contain the shop or product name and a link, no customer data.
 - **Uploads:** only JPEG, PNG and WebP images whose magic bytes match are accepted. They are
   stored under random names and served with `nosniff` and a sandbox CSP. Keep the uploads
   directory outside any path where the web server executes scripts.

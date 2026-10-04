@@ -1,40 +1,65 @@
 /**
- * Admin panel bootstrap: session & permission checks, navigation shell,
- * idle-timeout warning, forced password change and the hash router.
+ * Bootstrap for both back-office apps (`boot.app`):
+ *  - 'admin'  — staff panel at /admin
+ *  - 'seller' — shop-owner cabinet at /seller
+ * Session & permission checks, navigation shell, idle-timeout warning,
+ * forced password change and the hash router.
  */
 import { $, $$, on, readBoot, storage } from '../lib/dom.js';
 import { loadDictionary, t } from '../lib/i18n.js';
 import { api, can, getSession, logout } from '../lib/api.js';
 import { confirmDialog, setBusy, toast } from '../lib/ui.js';
 import { createRouter } from './router.js';
-import { bindMenus, confirmDiscard, initials, setDirtyCheck } from './shared.js';
+import { appContext, bindMenus, confirmDiscard, initials, setDirtyCheck } from './shared.js';
 import dashboardView from './views/dashboard.js';
 import { productListView, productFormView } from './views/products.js';
 import { taxonomyView } from './views/taxonomy.js';
-import { quoteListView, quoteDetailView } from './views/quotes.js';
+import { shopListView } from './views/shops.js';
+import reviewsView from './views/reviews.js';
+import approvalsView, { pendingTotal } from './views/approvals.js';
+import { bannersView, settingsView } from './views/content.js';
+import translationsView from './views/translations.js';
+import { sellerDashboardView, sellerShopView } from './views/seller.js';
 import usersView from './views/users.js';
 import auditView from './views/audit.js';
 import profileView from './views/profile.js';
 import { passwordGate } from './views/password-gate.js';
 
 const boot = readBoot();
-const RETURN_KEY = 'bb.admin.return';
+const MODE = boot.app === 'seller' ? 'seller' : 'admin';
+appContext.mode = MODE;
+const RETURN_KEY = `sb.${MODE}.return`;
+const LOGIN_URL = MODE === 'seller' ? '/login?next=%2Fseller' : '/admin/login';
 const session = storage('session');
 
-const ROUTES = [
+const ADMIN_ROUTES = [
   { path: '/dashboard', view: dashboardView, permission: 'dashboard:view', nav: 'dashboard', title: 'admin.nav.dashboard' },
+  { path: '/approvals', view: approvalsView, anyPermission: ['products:approve', 'shops:approve', 'reviews:moderate'], nav: 'approvals', title: 'admin.moderation.title' },
   { path: '/products', view: productListView, permission: 'products:read', nav: 'products', title: 'admin.products.title' },
   { path: '/products/new', view: productFormView, permission: 'products:write', nav: 'products', title: 'admin.products.new' },
   { path: '/products/:id', view: productFormView, permission: 'products:read', nav: 'products', title: 'admin.products.edit' },
   { path: '/categories', view: taxonomyView('categories'), permission: 'products:read', nav: 'categories', title: 'admin.categories.title' },
   { path: '/brands', view: taxonomyView('brands'), permission: 'products:read', nav: 'brands', title: 'admin.brands.title' },
-  { path: '/suppliers', view: taxonomyView('suppliers'), permission: 'products:read', nav: 'suppliers', title: 'admin.suppliers.title' },
-  { path: '/quotes', view: quoteListView, permission: 'quotes:read', nav: 'quotes', title: 'admin.quotes.title' },
-  { path: '/quotes/:id', view: quoteDetailView, permission: 'quotes:read', nav: 'quotes', title: 'admin.quotes.title' },
+  { path: '/shops', view: shopListView, permission: 'products:read', nav: 'shops', title: 'admin.shops.title' },
+  { path: '/reviews', view: reviewsView, permission: 'reviews:moderate', nav: 'reviews', title: 'admin.reviews.title' },
+  { path: '/content', view: settingsView, permission: 'content:write', nav: 'content', title: 'admin.content.title' },
+  { path: '/banners', view: bannersView, permission: 'content:write', nav: 'banners', title: 'admin.banners.title' },
+  { path: '/translations', view: translationsView, permission: 'translations:write', nav: 'translations', title: 'admin.translations.title' },
   { path: '/users', view: usersView, permission: 'users:manage', nav: 'users', title: 'admin.users.title' },
   { path: '/audit', view: auditView, permission: 'audit:read', nav: 'audit', title: 'admin.audit.title' },
   { path: '/profile', view: profileView, nav: 'profile', title: 'admin.profile.title' }
 ];
+
+const SELLER_ROUTES = [
+  { path: '/dashboard', view: sellerDashboardView, nav: 'dashboard', title: 'seller.nav.dashboard' },
+  { path: '/products', view: productListView, nav: 'products', title: 'seller.products.title' },
+  { path: '/products/new', view: productFormView, nav: 'product-new', title: 'admin.products.new' },
+  { path: '/products/:id', view: productFormView, nav: 'products', title: 'admin.products.edit' },
+  { path: '/shop', view: sellerShopView, nav: 'shop', title: 'seller.shop.title' },
+  { path: '/profile', view: profileView, nav: 'profile', title: 'admin.profile.title' }
+];
+
+const ROUTES = MODE === 'seller' ? SELLER_ROUTES : ADMIN_ROUTES;
 
 let leaving = false;
 
@@ -44,7 +69,7 @@ function toLogin({ expired = false } = {}) {
   setDirtyCheck(null);
   const hash = window.location.hash;
   if (hash && hash !== '#/dashboard') session?.setItem(RETURN_KEY, hash);
-  window.location.replace(`/admin/login${expired ? '?expired=1' : ''}`);
+  window.location.replace(`${LOGIN_URL}${expired ? `${LOGIN_URL.includes('?') ? '&' : '?'}expired=1` : ''}`);
 }
 
 function restoreReturnHash() {
@@ -134,7 +159,7 @@ function setupLogout() {
       leaving = true;
       setDirtyCheck(null);
       session?.removeItem(RETURN_KEY);
-      window.location.replace('/admin/login');
+      window.location.replace(MODE === 'seller' ? '/login' : '/admin/login');
     })
   );
 }
@@ -148,16 +173,18 @@ function highlightNav(nav) {
 
 let badgeCheckedAt = 0;
 
-async function refreshQuoteBadge(force = false) {
-  if (!can('quotes:read')) return;
+/** Admin: items waiting for moderation. Seller: own products in review. */
+async function refreshPendingBadge(force = false) {
+  const badge = $('[data-pending-badge]');
+  if (!badge) return;
+  if (MODE === 'admin' && !['products:approve', 'shops:approve', 'reviews:moderate'].some((p) => can(p))) return;
   if (!force && Date.now() - badgeCheckedAt < 30 * 1000) return;
   badgeCheckedAt = Date.now();
   try {
-    const data = await api('/api/admin/quotes?status=new&limit=1');
-    const badge = $('[data-new-quotes]');
-    badge.textContent = data.total > 99 ? '99+' : String(data.total);
-    badge.hidden = data.total === 0;
-    badge.setAttribute('aria-label', `${t('quoteStatus.new')}: ${data.total}`);
+    const total = MODE === 'seller' ? (await api('/api/seller/products?status=pending&limit=1')).total : await pendingTotal();
+    badge.textContent = total > 99 ? '99+' : String(total);
+    badge.hidden = total === 0;
+    badge.setAttribute('aria-label', `${t(MODE === 'seller' ? 'admin.status.product.pending' : 'admin.moderation.title')}: ${total}`);
   } catch {
     /* non-critical */
   }
@@ -219,7 +246,7 @@ async function main() {
     toLogin({ expired: true });
     return;
   }
-  if (!current?.user || !current.isStaff) {
+  if (!current?.user || (MODE === 'seller' ? !current.isSeller : !current.isStaff)) {
     toLogin({ expired: false });
     return;
   }
@@ -243,7 +270,7 @@ async function main() {
     onRoute: ({ title, nav, loading }) => {
       if (title) {
         titleEl.textContent = title;
-        document.title = `${title} — ${boot.siteName || 'Big Bazaar Build'}`;
+        document.title = `${title} — ${boot.siteName || 'Stroy Bazar'}`;
       }
       highlightNav(nav);
       if (loading) {
@@ -252,12 +279,12 @@ async function main() {
           outlet.focus({ preventScroll: true });
         }
         first = false;
-        refreshQuoteBadge();
+        refreshPendingBadge();
       }
     }
   });
 
-  document.addEventListener('admin:quotes-changed', () => refreshQuoteBadge(true));
+  document.addEventListener('admin:moderation-changed', () => refreshPendingBadge(true));
   document.addEventListener('admin:user-changed', async () => {
     try {
       const fresh = await getSession(true);
