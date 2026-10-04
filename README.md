@@ -80,25 +80,33 @@ Requirements: Node.js 22+ and MongoDB 6+.
 npm install
 npm run setup                          # creates .env with a random APP_SECRET
 # edit .env → MONGODB_URI, APP_ORIGIN, contacts (SUPPORT_PHONE, SUPPORT_TELEGRAM …)
-npm run seed                           # demo catalog (only if the catalog is empty)
-npm run seed -- --demo-accounts        # optional: demo admin/owner/customer accounts (refused in production)
-npm run create-admin                   # interactive: your own super-admin
 npm start
 ```
+
+**On the first start with an empty database, the server loads the demo marketplace by
+itself.** That means the 12 shops, 135 products, reviews and banners appear right away.
+Outside production it also creates the demo accounts. Set `SEED_DEMO_DATA=false` for a
+clean start without demo content. The data is never loaded twice and never overwrites
+existing data.
+
+In production (`NODE_ENV=production`) demo **accounts** are not created unless you set
+`SEED_DEMO_ACCOUNTS=true`. Create your own super-admin with `npm run create-admin`.
+`npm run seed` is still available, for example `npm run seed -- --reset` to reload the demo
+catalog.
 
 With Docker:
 
 ```bash
 cp .env.example .env && npm run setup
-docker compose up --build
-docker compose exec app npm run seed
+docker compose up --build              # demo data is loaded on the first start
 docker compose exec app npm run create-admin
 ```
 
 ## Demo accounts
 
-These accounts are for **testing only**. They are created by `npm run demo` or by
-`npm run seed -- --demo-accounts`, which is refused when `NODE_ENV=production`.
+These accounts are for **testing only**. They are created by `npm run demo`, on the first
+`npm start` with an empty database (outside production), or by
+`npm run seed -- --demo-accounts`.
 
 | Role | Login page | Email | Password |
 | --- | --- | --- | --- |
@@ -304,6 +312,8 @@ All settings are environment variables; `.env.example` documents every one.
 | `RATE_LIMIT_STORE` | `mongo` | `memory` only for a single process |
 | `UPLOAD_DIR`, `UPLOAD_MAX_MB` | `uploads`, `5` | Put uploads on persistent storage |
 | `AUDIT_RETENTION_DAYS` | `365` | `0` keeps entries forever |
+| `SEED_DEMO_DATA` | `true` | Load the demo shops/products when the database is empty |
+| `SEED_DEMO_ACCOUNTS` | `true` (dev) / `false` (production) | Create the demo accounts with the README passwords on that first load |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | empty | Optional moderation notifications |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | empty | Only for non-interactive `npm run create-admin` |
 
