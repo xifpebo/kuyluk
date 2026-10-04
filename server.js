@@ -6,6 +6,20 @@ const fs = require('node:fs');
 const { loadConfig } = require('./src/config');
 const { createLogger, setLogger } = require('./src/logger');
 
+/** First start on an empty database: load the demo shops, products and accounts. */
+async function seedIfEmpty(config, logger) {
+  if (!config.seedDemoData) return;
+  const { Product, Category } = require('./src/models');
+  if ((await Product.estimatedDocumentCount()) > 0 || (await Category.estimatedDocumentCount()) > 0) return;
+  const { seedCatalog, seedDemoAccounts } = require('./src/seed');
+  await seedCatalog({ withAccounts: config.seedDemoAccounts, log: (message) => logger.info(message) });
+  logger.info('Empty database: demo marketplace loaded (set SEED_DEMO_DATA=false to disable)');
+  if (config.seedDemoAccounts) {
+    await seedDemoAccounts();
+    logger.info('Demo accounts created — see README.md → "Demo accounts" (set SEED_DEMO_ACCOUNTS=false to disable)');
+  }
+}
+
 async function main() {
   let config;
   try {
@@ -25,6 +39,7 @@ async function main() {
 
   fs.mkdirSync(config.uploads.dir, { recursive: true });
   await connectDatabase(config.mongoUri);
+  await seedIfEmpty(config, logger);
   await require('./src/services/contentService').prepareContent(config);
 
   const app = createApp({ config });

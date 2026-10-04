@@ -77,6 +77,16 @@ function loadConfig(env = process.env) {
   const defaultLang = ['uz', 'ru'].includes(env.DEFAULT_LANG) ? env.DEFAULT_LANG : 'uz';
   const fontProvider = ['google', 'system', 'local'].includes(env.FONT_PROVIDER) ? env.FONT_PROVIDER : 'local';
 
+  const flag = (value, fallback) => (value === undefined || value === '' ? fallback : /^(1|true|yes|on)$/i.test(value));
+  // An empty database is filled with the demo marketplace on start-up, so a
+  // new installation never shows an empty site. Demo accounts (published test
+  // passwords) are created automatically only outside production.
+  const seedDemoData = flag(env.SEED_DEMO_DATA, !isTest);
+  const seedDemoAccounts = flag(env.SEED_DEMO_ACCOUNTS, !isProduction && !isTest);
+  if (isProduction && seedDemoAccounts) {
+    warnings.push('SEED_DEMO_ACCOUNTS=true in production: demo accounts with published passwords will be created. Delete them before going live.');
+  }
+
   const config = {
     rootDir: ROOT_DIR,
     env: nodeEnv,
@@ -95,6 +105,8 @@ function loadConfig(env = process.env) {
     supportTelegram: (env.SUPPORT_TELEGRAM || 'iafys').replace(/^@/, ''),
     supportInstagram: (env.SUPPORT_INSTAGRAM || 'xifpebo').replace(/^@/, ''),
     ownerName: env.OWNER_NAME || 'Alisherbek Bobokulov',
+    seedDemoData,
+    seedDemoAccounts,
     trustProxy,
     cookieSecure,
     defaultLang,
