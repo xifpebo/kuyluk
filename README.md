@@ -102,6 +102,44 @@ docker compose up --build              # demo data is loaded on the first start
 docker compose exec app npm run create-admin
 ```
 
+### Option C: Render (render.com)
+
+The site is a **Node.js web service** with a **MongoDB database**. It cannot run as a Render
+"Static Site" or on GitHub Pages: without the server, no shops or products load and no login
+works.
+
+1. **Database.** Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas):
+   - Add a database user.
+   - Under *Network Access*, allow `0.0.0.0/0`, because Render has no fixed IP on the free plan.
+   - Copy the connection string (`mongodb+srv://USER:PASSWORD@cluster…/stroy-bazar`).
+2. **Web service.** On Render, choose *New → Web Service* and connect the GitHub repository.
+   An existing service must be a *Web Service*, not a *Static Site*.
+   - Branch: `main`
+   - Runtime: Node · Build command: `npm ci --omit=dev` · Start command: `npm start`
+   - Health check path: `/healthz`
+
+   Alternatively, *New → Blueprint* reads `render.yaml` from the repository and fills these settings in.
+3. **Environment variables** (*Environment* tab):
+
+   | Key | Value |
+   | --- | --- |
+   | `NODE_ENV` | `production` |
+   | `MONGODB_URI` | the Atlas connection string |
+   | `APP_SECRET` | 32+ random characters (*Generate* in Render, or `npm run setup` locally) |
+   | `APP_ORIGIN` | your domain with `https://`, e.g. `https://stroybazar.uz`; leave unset to use the `….onrender.com` address |
+   | `ADMIN_EMAIL` | the email you will log in with |
+   | `ADMIN_PASSWORD` | 12+ characters, upper and lower case, a digit and a symbol. Avoid common or site words (`admin`, `bazar`, `stroy`, `qurilish`, `parol`, `password`) and your name or email, e.g. `Sariq#Gisht2026` |
+
+4. **Deploy.**
+   - On the first start the server fills the empty database with the demo shops and products.
+   - It also creates the super-admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; the Render log shows `Super-admin … is ready`. If the password is rejected, the log says why.
+   - Sign in at `https://YOUR-SITE/admin/login`, then **delete `ADMIN_PASSWORD`** from the environment. Change the password later in the admin panel under *My account*.
+
+Notes for Render:
+- **Proxy and cookies.** `TRUST_PROXY` defaults to one hop on Render, so rate limits see the real visitor IP, and cookies are `Secure` because the address is `https://`.
+- **Uploads on the free plan.** The disk is temporary: uploaded photos are lost on every deploy or restart. Attach a Render **Disk** (paid) mounted at `/opt/render/project/src/uploads`, or set `UPLOAD_DIR` to the disk's mount path. The bundled product photos are part of the repository and are never lost.
+- **Demo shop-owner accounts.** These are not created in production. To try them on Render anyway, set `SEED_DEMO_ACCOUNTS=true` and remove them before launch.
+
 ## Demo accounts
 
 These accounts are for **testing only**. They are created by `npm run demo`, on the first
@@ -315,7 +353,7 @@ All settings are environment variables; `.env.example` documents every one.
 | `SEED_DEMO_DATA` | `true` | Load the demo shops/products when the database is empty |
 | `SEED_DEMO_ACCOUNTS` | `true` (dev) / `false` (production) | Create the demo accounts with the README passwords on that first load |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | empty | Optional moderation notifications |
-| `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | empty | Only for non-interactive `npm run create-admin` |
+| `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | empty | Super-admin created (or repaired) on start-up; also used by non-interactive `npm run create-admin`. Remove `ADMIN_PASSWORD` after signing in |
 
 ## Internationalisation
 
