@@ -20,6 +20,43 @@ async function seedIfEmpty(config, logger) {
   }
 }
 
+/**
+ * Make sure someone can always sign in to /admin:
+ *  - ADMIN_EMAIL + ADMIN_PASSWORD in the environment: that super-admin is
+ *    created, or repaired (password, role, active, lockout) when it does not
+ *    match. Remove the variables once you have signed in.
+ *  - otherwise, when no super-admin exists and demo accounts are enabled, the
+ *    demo accounts from the README are created.
+ */
+async function ensureAdminAccess(config, logger) {
+  const { User } = require('./src/models');
+  const { ensureSuperadmin, seedDemoAccounts } = require('./src/seed');
+  const email = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || '';
+  if (email && password) {
+    const { verifyPassword } = require('./src/security/password');
+    const user = await User.findOne({ email }).select('+passwordHash').lean();
+    const usable =
+      user && user.role === 'superadmin' && user.isActive !== false && !(user.lockUntil > new Date()) && (await verifyPassword(password, user.passwordHash));
+    if (!usable) {
+      try {
+        await ensureSuperadmin({ email, name: process.env.ADMIN_NAME || config.ownerName, password });
+        logger.warn(`Super-admin ${email} is ready (from ADMIN_EMAIL/ADMIN_PASSWORD). Remove ADMIN_PASSWORD from the environment after signing in.`);
+      } catch (error) {
+        logger.error(`ADMIN_EMAIL/ADMIN_PASSWORD ignored: ${error.message}`);
+      }
+    }
+    return;
+  }
+  if (await User.exists({ role: 'superadmin', isActive: true })) return;
+  if (config.seedDemoAccounts) {
+    await seedDemoAccounts();
+    logger.info('No super-admin found: demo accounts created — admin@stroybazar.uz (password in README.md → "Demo accounts")');
+  } else {
+    logger.warn('No super-admin account exists. Run `npm run create-admin`, or set ADMIN_EMAIL and ADMIN_PASSWORD and restart.');
+  }
+}
+
 async function main() {
   let config;
   try {
@@ -40,6 +77,7 @@ async function main() {
   fs.mkdirSync(config.uploads.dir, { recursive: true });
   await connectDatabase(config.mongoUri);
   await seedIfEmpty(config, logger);
+  await ensureAdminAccess(config, logger);
   await require('./src/services/contentService').prepareContent(config);
 
   const app = createApp({ config });

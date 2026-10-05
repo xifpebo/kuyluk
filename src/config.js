@@ -50,7 +50,9 @@ function loadConfig(env = process.env) {
     errors.push('APP_SECRET must be at least 32 characters long.');
   }
 
-  const appOrigin = (env.APP_ORIGIN || `http://localhost:${port || 5000}`).replace(/\/+$/, '');
+  // Render (render.com) provides RENDER_EXTERNAL_URL, e.g. https://my-app.onrender.com.
+  const renderUrl = (env.RENDER_EXTERNAL_URL || '').replace(/\/+$/, '');
+  const appOrigin = (env.APP_ORIGIN || renderUrl || `http://localhost:${port || 5000}`).replace(/\/+$/, '');
   let originUrl;
   try {
     originUrl = new URL(appOrigin);
@@ -62,6 +64,11 @@ function loadConfig(env = process.env) {
     .split(',')
     .map((o) => o.trim().replace(/\/+$/, ''))
     .filter(Boolean);
+  if (renderUrl && renderUrl !== appOrigin) extraOrigins.push(renderUrl);
+
+  if (isProduction && !env.MONGODB_URI) {
+    errors.push('MONGODB_URI is required in production (for example a MongoDB Atlas connection string).');
+  }
 
   const cookieSecureSetting = (env.COOKIE_SECURE || 'auto').toLowerCase();
   const cookieSecure = cookieSecureSetting === 'auto' ? originUrl.protocol === 'https:' : bool(cookieSecureSetting, false);
@@ -69,7 +76,8 @@ function loadConfig(env = process.env) {
     errors.push('Production requires HTTPS cookies: set APP_ORIGIN to an https:// URL (or COOKIE_SECURE=true).');
   }
 
-  const trustProxy = parseTrustProxy(env.TRUST_PROXY);
+  // Behind Render's load balancer the client IP is in X-Forwarded-For (one hop).
+  const trustProxy = parseTrustProxy(env.TRUST_PROXY ?? (env.RENDER === 'true' ? '1' : undefined));
   if (trustProxy === true) {
     warnings.push('TRUST_PROXY=true trusts every hop; prefer a hop count (e.g. 1) or explicit proxy addresses.');
   }
